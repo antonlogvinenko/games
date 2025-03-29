@@ -1,4 +1,5 @@
-./.idea
+.idea
+contacts.iml
 pom.xml
 *jar
 /lib/
