@@ -202,7 +202,7 @@
    [:div {:class "container"}
     [:div {:class "navbar-brand"}
      [:span {:class "navbar-item"}
-      "ClojureScript Contacts"]]]])
+      "ClojureScript Contacts Alpha"]]]])
 
 (defn render-app! [state]
   (set-app-html!
