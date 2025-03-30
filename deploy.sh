@@ -1,5 +1,8 @@
 set -ex
 
+echo "Deploying..."
+date
+
 git stash
 
 clj -M:fig:min
