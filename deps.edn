@@ -11,4 +11,5 @@
            :build {:main-opts ["-m" "figwheel.main" "-b" "dev" "-r"]}
            :clean {:main-opts ["-m" "figwheel.main" "--clean" "dev"]}
            :min   {:main-opts ["-m" "figwheel.main" "-O" "advanced" "-bo" "dev"]}
+           :prod  {:main-opts ["-m" "figwheel.main" "-O" "advanced" "-bo" "prod"]}
            :test  {:main-opts ["-m" "figwheel.main" "-co" "test.cljs.edn" "-m" "learn-cljs.test-runner"]}}}
