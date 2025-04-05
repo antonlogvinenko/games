@@ -3,7 +3,108 @@
   (:require [hiccups.runtime]
             [goog.dom :as gdom]
             [goog.events :as gevents]
+            [cljs.core.async :refer [go-loop go <! >! timeout chan put!] :as async]
             [clojure.string :as str]))
+
+
+
+;; -- Game state
+(def none 0)
+(def filled 1)
+(defn none? [cell] (== cell none))
+(defn filled? [cell] (== cell filled))
+
+(def no-element nil)
+(defn has-element? [elem] (seq? elem))
+
+(defrecord Coord [x y])
+
+(defn init-state [xs ys]
+  {:xs      xs
+   :ys      ys
+   :field   (replicate ys (replicate xs none))
+   :element no-element})
+
+(def settings (atom {:on true :logging true}))
+(defn playing? [] (:on @settings))
+(defn logging? [] (:logging @settings))
+(defn log [& objs]
+  (when logging? (println objs)))
+
+
+
+;; -- Sources of action
+;; user actions (key pressed) -> action-ch
+;; game actions (descending)  -> action-ch
+;; action-ch -> engine that changes @game-state
+;; @game-state listener renders the game
+(derive ::descend ::action)
+(derive ::drop ::action)
+(derive ::move-left ::action)
+(derive ::move-right ::action)
+(derive ::rotate-left ::action)
+(derive ::rotate-right ::action)
+
+(defn start-ticker [action-ch interval-ms]
+  (go-loop []
+           (<! (timeout interval-ms))
+           (log "Game ticking at" interval-ms)
+           (>! action-ch :descend)
+           (if (playing?) (recur) false)))
+
+(defn game-engine [game-state msg]
+  (log "Message is handled by the game engine" msg)
+  game-state)
+
+(defn start-game-engine [init-state action-ch game-state-ch]
+  (go-loop [current-state init-state]
+           (let [msg (<! action-ch)]
+             (log "Action handler received a message" msg)
+             (let [new-state (game-engine current-state msg)]
+               (>! game-state-ch new-state)
+               (if (playing?) (recur new-state) false)))))
+
+(defn start-kbd-listener [action-ch])
+
+(defn render [last-displayed-state new-state]
+  {})
+
+(defn start-render-calculator [init-state game-state-ch render-ch]
+  (go-loop [last-displayed-state init-state]
+           (let [new-state (<! game-state-ch)]
+             (log "Render calculator received game state")
+             (>! render-ch (render last-displayed-state new-state))
+             (if (playing?) (recur new-state) false))))
+
+(defn start-render [render-ch]
+  (go-loop []
+           (let [cmd (<! render-ch)]
+             (log "Renderer received command" cmd)
+             (if (playing?) (recur) false))))
+
+(defn start []
+  (let [action-ch (chan (async/sliding-buffer 10))
+        game-state-ch (chan (async/sliding-buffer 10))
+        render-ch (chan (async/sliding-buffer 10))
+        state (init-state 5 20)]
+    (swap! settings assoc :on true)
+    (start-ticker action-ch 2000)
+    (start-kbd-listener action-ch)
+    (start-game-engine state action-ch game-state-ch)
+    (start-render-calculator state game-state-ch render-ch)
+    (start-render render-ch)
+    state))
+
+(defn stop []
+  (swap! settings assoc :on false))
+
+;; make a function: check-if-still-playing
+;;               (if (not (playing?)) (throw js/Error. ""))
+;;
+;; 
+; get rid of ":on" state - send :quit message
+; loggin flag is just a variable
+
 
 
 
