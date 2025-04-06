@@ -3,7 +3,7 @@
   (:require [hiccups.runtime]
             [goog.dom :as gdom]
             [goog.events :as gevents]
-            [cljs.core.async :refer [go-loop go <! >! timeout chan put!] :as async]
+            [cljs.core.async :refer [go-loop go <! >! timeout chan] :as async]
             [clojure.string :as str]))
 
 
@@ -26,11 +26,12 @@
    :element no-element})
 
 (def settings (atom {:on true :logging true}))
-(defn playing? [] (:on @settings))
-(defn logging? [] (:logging @settings))
-(defn log [& objs]
-  (when logging? (println objs)))
-
+(defn ctrl [& objs]
+  (when (:logging @settings) (println objs))
+  (if (:on @settings)
+    nil
+    (do (println "terminating")
+        (throw (js/Error "terminated")))))
 
 
 ;; -- Sources of action
@@ -48,21 +49,21 @@
 (defn start-ticker [action-ch interval-ms]
   (go-loop []
            (<! (timeout interval-ms))
-           (log "Game ticking at" interval-ms)
+           (ctrl "Game ticking at" interval-ms)
            (>! action-ch :descend)
-           (if (playing?) (recur) false)))
+           (recur)))
 
 (defn game-engine [game-state msg]
-  (log "Message is handled by the game engine" msg)
+  (ctrl "Message is handled by the game engine" msg)
   game-state)
 
 (defn start-game-engine [init-state action-ch game-state-ch]
   (go-loop [current-state init-state]
            (let [msg (<! action-ch)]
-             (log "Action handler received a message" msg)
+             (ctrl "Action handler received a message" msg)
              (let [new-state (game-engine current-state msg)]
                (>! game-state-ch new-state)
-               (if (playing?) (recur new-state) false)))))
+               (recur new-state)))))
 
 (defn start-kbd-listener [action-ch])
 
@@ -72,15 +73,15 @@
 (defn start-render-calculator [init-state game-state-ch render-ch]
   (go-loop [last-displayed-state init-state]
            (let [new-state (<! game-state-ch)]
-             (log "Render calculator received game state")
+             (ctrl "Render calculator received game state")
              (>! render-ch (render last-displayed-state new-state))
-             (if (playing?) (recur new-state) false))))
+             (recur new-state))))
 
 (defn start-render [render-ch]
   (go-loop []
            (let [cmd (<! render-ch)]
-             (log "Renderer received command" cmd)
-             (if (playing?) (recur) false))))
+             (ctrl "Renderer received command" cmd)
+             (recur))))
 
 (defn start []
   (let [action-ch (chan (async/sliding-buffer 10))
@@ -98,13 +99,14 @@
 (defn stop []
   (swap! settings assoc :on false))
 
-;; make a function: check-if-still-playing
-;;               (if (not (playing?)) (throw js/Error. ""))
-;;
-;; 
-; get rid of ":on" state - send :quit message
-; loggin flag is just a variable
 
+;; read the keyboard
+;; render the field
+;; field diff calculator
+;; start the game
+;; state + descending
+;; state + rotation
+;; state + arrival
 
 
 
