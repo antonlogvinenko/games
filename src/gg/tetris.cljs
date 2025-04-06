@@ -3,7 +3,7 @@
   (:require [hiccups.runtime]
             [goog.dom :as gdom]
             [goog.events :as gevents]
-            [cljs.core.async :refer [go-loop go <! >! timeout chan] :as async]
+            [cljs.core.async :refer [go-loop go <! >! timeout chan put! alts!] :as async]
             [clojure.string :as str]))
 
 
@@ -49,7 +49,7 @@
 (defn start-ticker [action-ch interval-ms]
   (go-loop []
            (<! (timeout interval-ms))
-           (ctrl "Game ticking at" interval-ms)
+           (ctrl "Game ticker" interval-ms)
            (>! action-ch :descend)
            (recur)))
 
@@ -60,12 +60,42 @@
 (defn start-game-engine [init-state action-ch game-state-ch]
   (go-loop [current-state init-state]
            (let [msg (<! action-ch)]
-             (ctrl "Action handler received a message" msg)
+             (ctrl "Action handler" msg)
              (let [new-state (game-engine current-state msg)]
                (>! game-state-ch new-state)
                (recur new-state)))))
 
-(defn start-kbd-listener [action-ch])
+
+
+
+
+(defn start-kbd-listener [chord-ch]
+  (let [is-modifier? #{"Control" "Meta" "Alt" "Shift"}
+        keydown-ch (chan)
+        keyup-ch (chan)]
+    (gevents/listen js/document "keydown" #(put! keydown-ch (.-key %)))
+    (gevents/listen js/document "keyup" #(put! keyup-ch (.-key %)))
+    (go-loop [modifiers [] pressed nil]
+             (when (and pressed)
+               (>! chord-ch (conj modifiers pressed))
+               (recur [] nil))
+             (let [[key ch] (alts! [keydown-ch keyup-ch])]
+               (condp = ch
+                 keydown-ch (if (is-modifier? key)
+                              (recur (conj modifiers key) pressed)
+                              (recur modifiers key))
+                 keyup-ch (if (is-modifier? key)
+                            (recur (filterv #(not= % key) modifiers) pressed)
+                            (recur modifiers nil)))))))
+
+(defn start-kbd-interpreter [chord-ch action-ch]
+  (go-loop []
+           (let [input (<! chord-ch)]
+             (ctrl "kbd interpreter" input)
+             (>! action-ch input)
+             (recur))))
+
+
 
 (defn render [last-displayed-state new-state]
   {})
@@ -73,24 +103,26 @@
 (defn start-render-calculator [init-state game-state-ch render-ch]
   (go-loop [last-displayed-state init-state]
            (let [new-state (<! game-state-ch)]
-             (ctrl "Render calculator received game state")
+             (ctrl "Render calculator")
              (>! render-ch (render last-displayed-state new-state))
              (recur new-state))))
 
 (defn start-render [render-ch]
   (go-loop []
            (let [cmd (<! render-ch)]
-             (ctrl "Renderer received command" cmd)
+             (ctrl "Renderer" cmd)
              (recur))))
 
 (defn start []
-  (let [action-ch (chan (async/sliding-buffer 10))
+  (let [chord-ch (chan (async/sliding-buffer 10))
+        action-ch (chan (async/sliding-buffer 10))
         game-state-ch (chan (async/sliding-buffer 10))
         render-ch (chan (async/sliding-buffer 10))
         state (init-state 5 20)]
     (swap! settings assoc :on true)
     (start-ticker action-ch 2000)
-    (start-kbd-listener action-ch)
+    (start-kbd-listener chord-ch)
+    (start-kbd-interpreter chord-ch action-ch)
     (start-game-engine state action-ch game-state-ch)
     (start-render-calculator state game-state-ch render-ch)
     (start-render render-ch)
@@ -99,8 +131,14 @@
 (defn stop []
   (swap! settings assoc :on false))
 
+(defn restart []
+  (stop)
+  (start))
 
-;; read the keyboard
+
+;; add go-loop to jsut read the keyboard: space enter shift+enter left right
+;; implement a go-loop to interpret keyboard to commands
+;;
 ;; render the field
 ;; field diff calculator
 ;; start the game
