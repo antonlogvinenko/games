@@ -34,11 +34,19 @@
         (throw (js/Error "terminated")))))
 
 
-;; -- Sources of action
-;; user actions (key pressed) -> action-ch
-;; game actions (descending)  -> action-ch
-;; action-ch -> engine that changes @game-state
-;; @game-state listener renders the game
+;; -- Map of channels
+;; user actions: key pressed
+;;    -> (chord-ch)
+;;    -> kbd interpreter: keys pressed to user action
+;;    -> (action-ch)
+;; game ticker: descending cmd
+;;    -> (action-ch)
+;; (action-ch)
+;;    -> engine: state + action = state
+;;    -> (game-state-ch)
+;;    -> render calculator: old_state + new_state = diff
+;;    -> (render-ch)
+;;    -> renderer: render the diff
 (derive ::descend ::action)
 (derive ::drop ::action)
 (derive ::move-left ::action)
@@ -135,10 +143,7 @@
   (stop)
   (start))
 
-
-;; add go-loop to jsut read the keyboard: space enter shift+enter left right
-;; implement a go-loop to interpret keyboard to commands
-;;
+;; interpret keyboard to commands
 ;; render the field
 ;; field diff calculator
 ;; start the game
