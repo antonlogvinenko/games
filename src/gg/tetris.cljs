@@ -76,7 +76,6 @@
 
 
 
-
 (defn start-kbd-listener [chord-ch]
   (let [is-modifier? #{"Control" "Meta" "Alt" "Shift"}
         keydown-ch (chan)
@@ -84,23 +83,32 @@
     (gevents/listen js/document "keydown" #(put! keydown-ch (.-key %)))
     (gevents/listen js/document "keyup" #(put! keyup-ch (.-key %)))
     (go-loop [modifiers [] pressed nil]
-             (when (and pressed)
-               (>! chord-ch (conj modifiers pressed))
-               (recur [] nil))
+             (when pressed
+               (do (ctrl "sending kbd event" modifiers (.toLowerCase pressed))
+                   (>! chord-ch {:modifiers modifiers :pressed pressed})
+                   (recur [] nil)))
              (let [[key ch] (alts! [keydown-ch keyup-ch])]
                (condp = ch
-                 keydown-ch (if (is-modifier? key)
-                              (recur (conj modifiers key) pressed)
-                              (recur modifiers key))
-                 keyup-ch (if (is-modifier? key)
-                            (recur (filterv #(not= % key) modifiers) pressed)
-                            (recur modifiers nil)))))))
+                 keydown-ch (do (ctrl "keydown" key)
+                                (if (is-modifier? key)
+                                  (recur (conj modifiers key) pressed)
+                                  (recur modifiers key)))
+                 keyup-ch (do (ctrl "keyup" key)
+                              (if (is-modifier? key)
+                                (recur (filterv #(not= % key) modifiers) pressed)
+                                (recur modifiers nil))))))))
 
+(def key-commands {"s" :complete
+                   "w" :rotate
+                   " " :complete
+                   "a" :left
+                   "d" :right})
 (defn start-kbd-interpreter [chord-ch action-ch]
   (go-loop []
-           (let [input (<! chord-ch)]
-             (ctrl "kbd interpreter" input)
-             (>! action-ch input)
+           (let [input (<! chord-ch)
+                 cmd (-> input :pressed key-commands)]
+             (ctrl "kbd input interpreted" input cmd)
+             (when cmd (>! action-ch cmd))
              (recur))))
 
 
@@ -128,7 +136,7 @@
         render-ch (chan (async/sliding-buffer 10))
         state (init-state 5 20)]
     (swap! settings assoc :on true)
-    (start-ticker action-ch 2000)
+    (start-ticker action-ch 60000)
     (start-kbd-listener chord-ch)
     (start-kbd-interpreter chord-ch action-ch)
     (start-game-engine state action-ch game-state-ch)
@@ -143,7 +151,8 @@
   (stop)
   (start))
 
-;; interpret keyboard to commands
+;; how to make channels always quit easily - kbd reader gets stuck because no input channel
+;;
 ;; render the field
 ;; field diff calculator
 ;; start the game
