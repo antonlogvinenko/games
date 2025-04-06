@@ -1,4 +1,4 @@
-(ns learn-cljs.contacts
+(ns gg.tetris
   (:require-macros [hiccups.core :as hiccups])
   (:require [hiccups.runtime]
             [goog.dom :as gdom]

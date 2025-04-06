@@ -1,5 +1,5 @@
-(ns learn-cljs.contacts-test
+(ns gg.tetris-test
     (:require
      [cljs.test :refer-macros [deftest is testing]]
-     [learn-cljs.contacts]))
+     [gg.tetris]))
 
