@@ -25,28 +25,7 @@
    :field   (replicate ys (replicate xs none))
    :element no-element})
 
-(def settings (atom {:on true :logging true}))
-(defn ctrl [& objs]
-  (when (:logging @settings) (println objs))
-  (if (:on @settings)
-    nil
-    (do (println "terminating")
-        (throw (js/Error "terminated")))))
 
-
-;; -- Map of channels
-;; user actions: key pressed
-;;    -> (chord-ch)
-;;    -> kbd interpreter: keys pressed to user action
-;;    -> (action-ch)
-;; game ticker: descending cmd
-;;    -> (action-ch)
-;; (action-ch)
-;;    -> engine: state + action = state
-;;    -> (game-state-ch)
-;;    -> render calculator: old_state + new_state = diff
-;;    -> (render-ch)
-;;    -> renderer: render the diff
 (derive ::descend ::action)
 (derive ::drop ::action)
 (derive ::move-left ::action)
@@ -54,108 +33,159 @@
 (derive ::rotate-left ::action)
 (derive ::rotate-right ::action)
 
-(defn start-ticker [action-ch interval-ms]
-  (go-loop []
-           (<! (timeout interval-ms))
-           (ctrl "Game ticker" interval-ms)
-           (>! action-ch :descend)
-           (recur)))
 
-(defn game-engine [game-state msg]
-  (ctrl "Message is handled by the game engine" msg)
+
+
+
+(defn action-handler [game-state msg]
+  (println "This is inside action handler" msg)
   game-state)
 
-(defn start-game-engine [init-state action-ch game-state-ch]
-  (go-loop [current-state init-state]
-           (let [msg (<! action-ch)]
-             (ctrl "Action handler" msg)
-             (let [new-state (game-engine current-state msg)]
-               (>! game-state-ch new-state)
-               (recur new-state)))))
+(defn listen [down-listener up-listener]
+  (gevents/listen js/document "keydown" down-listener)
+  (gevents/listen js/document "keyup" up-listener))
 
+(defn create-kbd-ch []
+  (let [kbd-inbox (chan)]
+    (listen #(put! kbd-inbox {:action :down :key (.-key %)})
+            #(put! kbd-inbox {:action :up :key (.-key %)}))
+    kbd-inbox))
 
-
-
-(defn start-kbd-listener [chord-ch]
-  (let [is-modifier? #{"Control" "Meta" "Alt" "Shift"}
-        keydown-ch (chan)
-        keyup-ch (chan)]
-    (gevents/listen js/document "keydown" #(put! keydown-ch (.-key %)))
-    (gevents/listen js/document "keyup" #(put! keyup-ch (.-key %)))
-    (go-loop [modifiers [] pressed nil]
-             (when pressed
-               (do (ctrl "sending kbd event" modifiers (.toLowerCase pressed))
-                   (>! chord-ch {:modifiers modifiers :pressed pressed})
-                   (recur [] nil)))
-             (let [[key ch] (alts! [keydown-ch keyup-ch])]
-               (condp = ch
-                 keydown-ch (do (ctrl "keydown" key)
-                                (if (is-modifier? key)
-                                  (recur (conj modifiers key) pressed)
-                                  (recur modifiers key)))
-                 keyup-ch (do (ctrl "keyup" key)
-                              (if (is-modifier? key)
-                                (recur (filterv #(not= % key) modifiers) pressed)
-                                (recur modifiers nil))))))))
 
 (def key-commands {"s" :complete
                    "w" :rotate
                    " " :complete
                    "a" :left
                    "d" :right})
-(defn start-kbd-interpreter [chord-ch action-ch]
-  (go-loop []
-           (let [input (<! chord-ch)
-                 cmd (-> input :pressed key-commands)]
-             (ctrl "kbd input interpreted" input cmd)
-             (when cmd (>! action-ch cmd))
-             (recur))))
-
 
 
 (defn render [last-displayed-state new-state]
   {})
 
-(defn start-render-calculator [init-state game-state-ch render-ch]
-  (go-loop [last-displayed-state init-state]
-           (let [new-state (<! game-state-ch)]
-             (ctrl "Render calculator")
-             (>! render-ch (render last-displayed-state new-state))
-             (recur new-state))))
+;; fn : {:msg msg-in :state} -> {:msg msg-out :state state}
+;; if msg-out is nil, the message is not sent to channel, only recur is performed
+;; current state of the actor is replaced with the state that the function returns
+(defn actor [id logging inbox outbox fn]
+  (go-loop [state {}]
+           (let [msg-in (<! inbox)]
+             (when logging (println "[" id "]" "received a message" msg-in))
+             (if (= msg-in :quit)
+               (println "Quitting" id)
+               (let [{msg-out :msg new-state :state :or {state {}}} (fn {:state state :msg msg-in})]
+                 (when msg-out (>! outbox msg-out))
+                 (recur new-state))))))
 
-(defn start-render [render-ch]
-  (go-loop []
-           (let [cmd (<! render-ch)]
-             (ctrl "Renderer" cmd)
-             (recur))))
+(defn create-timed-ch [ctrl interval-ms]
+  (let [inbox (chan)]
+    (go-loop []
+             (let [[v ch] (alts! [ctrl (timeout interval-ms)])]
+               (when (and (= ch ctrl) (= v :quit)) nil)
+               (<! (timeout interval-ms))
+               (>! inbox {})
+               (recur)))
+    inbox))
 
-(defn start []
-  (let [chord-ch (chan (async/sliding-buffer 10))
-        action-ch (chan (async/sliding-buffer 10))
-        game-state-ch (chan (async/sliding-buffer 10))
-        render-ch (chan (async/sliding-buffer 10))
-        state (init-state 5 20)]
-    (swap! settings assoc :on true)
-    (start-ticker action-ch 60000)
-    (start-kbd-listener chord-ch)
-    (start-kbd-interpreter chord-ch action-ch)
-    (start-game-engine state action-ch game-state-ch)
-    (start-render-calculator state game-state-ch render-ch)
-    (start-render render-ch)
-    state))
+(defn default-ch [] (chan (async/sliding-buffer 10)))
 
-(defn stop []
-  (swap! settings assoc :on false))
-
-(defn restart []
-  (stop)
-  (start))
-
-;; how to make channels always quit easily - kbd reader gets stuck because no input channel
+;; -- Map of channels
+;; kbd listener
+;;    register what's pressed, e.g. [Shift + Enter]
+;;    kbd-inbox -> chord-inbox
+;; keyboard-interpreter
+;;    interpret what was entered via keyboard, e.g. [Shift + Enter] -> :rotate
+;;    chord-inbox -> action-inbox
+;; ticker
+;;    regularly descend the current element
+;;    timed-inbox -> action-inbox
 ;;
-;; render the field
-;; field diff calculator
+;;
+;; action-handler:
+;;    action-inbox -> renderer-calculator-inbox
+;;
+;; renderer calculator:
+;;    renderer-calculator-inbox -> renderer-inbox
+;; renderer:
+;;    renderer-inbox -> null-inbox
+(defn start []
+  (let [state (init-state 5 20)
+
+        timed-ch-ctrl (default-ch)
+        timed-ch (create-timed-ch timed-ch-ctrl 10000)
+        kbd-ch (create-kbd-ch)
+        null-inbox (default-ch)
+
+        renderer-ch (default-ch)
+        renderer-calculator-ch (default-ch)
+        action-ch (default-ch)
+        chord-ch (default-ch)]
+
+    (actor "renderer"
+           true
+           renderer-ch
+           null-inbox
+           (fn [{msg :msg}] {:msg {}}))
+
+    (actor "renderer calculator"
+           true
+           renderer-calculator-ch
+           renderer-ch
+           (fn [{last-displayed-state :state new-state-to-display :msg}]
+             {:msg   (render last-displayed-state new-state-to-display)
+              :state new-state-to-display}))
+
+    (actor "action handler"
+           true
+           action-ch
+           renderer-calculator-ch
+           (fn [{state :state msg :msg}]
+             (let [new-game-state (action-handler state msg)]
+               {:msg new-game-state :state new-game-state})))
+
+    (actor "ticker"
+           true
+           timed-ch
+           action-ch
+           (fn [{msg :msg}] {:msg :descend}))
+
+    (actor "kbd interpreter"
+           true
+           chord-ch
+           action-ch
+           (fn [{input :msg}] {:msg (-> input :pressed key-commands)}))
+
+    (actor "kbd listener"
+           false
+           kbd-ch
+           chord-ch
+           (fn [{msg :msg modifiers :state}]
+             (let [{action :action key :key} msg
+                   is-modifier? #{"Control" "Meta" "Alt" "Shift"}]
+               (condp = action
+                 :down
+                 (if (is-modifier? key)
+                   {:msg nil :state (conj modifiers key)}
+                   {:msg {:modifiers modifiers :pressed key} :state []})
+                 :up
+                 (if (is-modifier? key)
+                   {:msg nil :state (filterv #(not= % key) modifiers)}
+                   {:msg nil :state []})))))
+
+    ;;return stop function
+    (fn []
+      (map (fn [ch] (put! ch :quit))
+           [timed-ch-ctrl timed-ch
+            kbd-ch chord-ch
+            action-ch
+            renderer-calculator-ch renderer-ch]))))
+
+;; interpret keyboard actions
+;; render calculator + renderer
+;; action handler for :rotate
+
+;; game engine to turn state + action to new state
+;; state diff calculator
 ;; start the game
+;; render the field
 ;; state + descending
 ;; state + rotation
 ;; state + arrival
