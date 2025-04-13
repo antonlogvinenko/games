@@ -4,7 +4,9 @@
             [goog.dom :as gdom]
             [goog.events :as gevents]
             [cljs.core.async :refer [go-loop go <! >! timeout chan put! alts!] :as async]
+            [cljs.core :as core]
             [clojure.string :as str]))
+
 
 
 
@@ -52,11 +54,7 @@
     kbd-inbox))
 
 
-(def key-commands {"s" :complete
-                   "w" :rotate
-                   " " :complete
-                   "a" :left
-                   "d" :right})
+
 
 
 (defn render [last-displayed-state new-state]
@@ -65,13 +63,14 @@
 ;; fn : {:msg msg-in :state} -> {:msg msg-out :state state}
 ;; if msg-out is nil, the message is not sent to channel, only recur is performed
 ;; current state of the actor is replaced with the state that the function returns
-(defn actor [id logging inbox outbox fn]
-  (go-loop [state {}]
+(defn actor [id logging inbox outbox state fn]
+  (println "Starting actor" id)
+  (go-loop [state state]
            (let [msg-in (<! inbox)]
              (when logging (println "[" id "]" "received a message" msg-in))
              (if (= msg-in :quit)
                (println "Quitting" id)
-               (let [{msg-out :msg new-state :state :or {state {}}} (fn {:state state :msg msg-in})]
+               (let [{msg-out :msg new-state :state} (fn {:state state :msg msg-in})]
                  (when msg-out (>! outbox msg-out))
                  (recur new-state))))))
 
@@ -80,12 +79,36 @@
     (go-loop []
              (let [[v ch] (alts! [ctrl (timeout interval-ms)])]
                (when (and (= ch ctrl) (= v :quit)) nil)
-               (<! (timeout interval-ms))
                (>! inbox {})
                (recur)))
     inbox))
 
 (defn default-ch [] (chan (async/sliding-buffer 10)))
+
+
+(defn interpret-kbd-input [input]
+  (let [key-commands {[[] "w"]              :rotate-right
+                      [["shift"] "w"]       :rotate-left
+                      [[] "a"]              :left
+                      [[] "s"]              :complete
+                      [[] "d"]              :right-right
+                      [["shift"] "d"]       :right-left
+
+                      [[] " "]              :complete
+
+                      [[] "arrowup"]        :rotate-right
+                      [["shift"] "arrowup"] :rotate-left
+                      [[] "arrowdown"]      :complete
+                      [[] "arrowleft"]      :left
+                      [[] "arrowright"]     :right
+
+                      [[] "enter"]          :rotate-right
+                      [["shift"] "enter"]   :rotate-left}]
+    (let [{modifiers :modifiers pressed :pressed} input
+          modifiers (filter #{"shift"} modifiers)
+          pair [modifiers pressed]]
+      (key-commands pair))))
+
 
 ;; -- Map of channels
 ;; kbd listener
@@ -106,11 +129,13 @@
 ;;    renderer-calculator-inbox -> renderer-inbox
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
-(defn start []
+
+
+(defn run []
   (let [state (init-state 5 20)
 
         timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 10000)
+        timed-ch (create-timed-ch timed-ch-ctrl 30000)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -120,76 +145,125 @@
         chord-ch (default-ch)]
 
     (actor "renderer"
-           true
+           false
            renderer-ch
            null-inbox
+           {}
            (fn [{msg :msg}] {:msg {}}))
 
     (actor "renderer calculator"
-           true
+           false
            renderer-calculator-ch
            renderer-ch
+           {}
            (fn [{last-displayed-state :state new-state-to-display :msg}]
              {:msg   (render last-displayed-state new-state-to-display)
               :state new-state-to-display}))
 
     (actor "action handler"
-           true
+           false
            action-ch
            renderer-calculator-ch
+           {}
            (fn [{state :state msg :msg}]
              (let [new-game-state (action-handler state msg)]
                {:msg new-game-state :state new-game-state})))
 
     (actor "ticker"
-           true
+           false
            timed-ch
            action-ch
+           {}
            (fn [{msg :msg}] {:msg :descend}))
 
     (actor "kbd interpreter"
            true
            chord-ch
            action-ch
-           (fn [{input :msg}] {:msg (-> input :pressed key-commands)}))
+           {}
+           (fn [{input :msg}] {:msg (interpret-kbd-input input)}))
 
     (actor "kbd listener"
-           false
+           true
            kbd-ch
            chord-ch
+           []
            (fn [{msg :msg modifiers :state}]
              (let [{action :action key :key} msg
-                   is-modifier? #{"Control" "Meta" "Alt" "Shift"}]
+                   key (str/lower-case key)
+                   is-modifier? #{"shift" "alt" "ctrl" "meta"}]
                (condp = action
                  :down
                  (if (is-modifier? key)
                    {:msg nil :state (conj modifiers key)}
-                   {:msg {:modifiers modifiers :pressed key} :state []})
+                   {:msg {:modifiers modifiers :pressed key} :state modifiers})
                  :up
                  (if (is-modifier? key)
                    {:msg nil :state (filterv #(not= % key) modifiers)}
-                   {:msg nil :state []})))))
+                   {:msg nil :state modifiers})))))
 
-    ;;return stop function
-    (fn []
-      (map (fn [ch] (put! ch :quit))
-           [timed-ch-ctrl timed-ch
-            kbd-ch chord-ch
-            action-ch
-            renderer-calculator-ch renderer-ch]))))
+    {:stop (fn []
+             (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch
+                   renderer-calculator-ch renderer-ch]
+                  (map (fn [ch] (put! ch :quit)))
+                  dorun))}))
 
-;; interpret keyboard actions
-;; render calculator + renderer
+(defonce game (atom (run)))
+
+(defn stop []
+  ((:stop @game)))
+
+(defn start []
+  (stop)
+  (reset! game (run)))
+
+(start)
+
+
+
+
+;; 1.
+;; interpret keyboard actions - add a unit test
+;;
+;; 2.
+;; display a field in html
+;;
+;; 3.
+;; implement renderer
+;; [{:x x :y y :color color} {:x x :y y :color color}]
+;;
+;; 4.
+;; implement diff calculator
+;;
+;; 5.
+;; action handler for :descend
+;;
+;; 6.
 ;; action handler for :rotate
-
-;; game engine to turn state + action to new state
-;; state diff calculator
-;; start the game
-;; render the field
-;; state + descending
-;; state + rotation
-;; state + arrival
-
+;;
+;; 7.
+;; glue together to make game start, generate block, merge it, generate new, lose
+;;
+;; -1. google for more methods
+;
+;0. if check failed
+;	- slow down the the browser
+;	- show the actual website and send the user there - use their website to your ad platform
+;	- close the window if user disagrees
+;
+;1. addition obsfuscation methods
+;	- compare to hash/hashes of the domain
+;	- js references (window / location) - are they spilled?
+;	- merge strings from bytes and send to js/eval to avoid detection in the output
+;
+;2. check the current location with JS
+;	- different types of access checks in different places
+;
+;3. based on user's time
+;	- same methods but "js works only until may 31 this year" - and somehow update on redeploy
+;	- web pages auto reload themselves
+;4. do request to backend on front (with website's url)
+;	- backend checks from what site the query came, and gives bad uids
 
 
 ;; Model
