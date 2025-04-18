@@ -5,6 +5,7 @@
             [goog.events :as gevents]
             [cljs.core.async :refer [go-loop go <! >! timeout chan put! alts!] :as async]
             [cljs.core :as core]
+            [cljs.test :as test]
             [clojure.string :as str]))
 
 
@@ -86,6 +87,7 @@
 (defn default-ch [] (chan (async/sliding-buffer 10)))
 
 
+
 (defn interpret-kbd-input [input]
   (let [key-commands {[[] "w"]              :rotate-right
                       [["shift"] "w"]       :rotate-left
@@ -109,6 +111,8 @@
           pair [modifiers pressed]]
       (key-commands pair))))
 
+
+(defn cake [] (test/run-all-tests))
 
 ;; -- Map of channels
 ;; kbd listener
@@ -224,25 +228,30 @@
 
 ;; 1.
 ;; interpret keyboard actions - add a unit test
-;;
 ;; 2.
 ;; display a field in html
-;;
+;; add function for logging that checks dynamically scoped var that is changed via boolean passed to actor
 ;; 3.
 ;; implement renderer
 ;; [{:x x :y y :color color} {:x x :y y :color color}]
-;;
 ;; 4.
 ;; implement diff calculator
-;;
 ;; 5.
 ;; action handler for :descend
-;;
 ;; 6.
 ;; action handler for :rotate
-;;
 ;; 7.
 ;; glue together to make game start, generate block, merge it, generate new, lose
+;;
+;;
+;; stealing precaution: hostname and verify what is visible in the obfuscated code
+;; domain name
+;; use the domain name
+;; robots.txt
+;; seo
+;;
+;;
+;;
 ;;
 ;; -1. google for more methods
 ;
