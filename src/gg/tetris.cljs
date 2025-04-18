@@ -30,7 +30,7 @@
 
 
 (derive ::descend ::action)
-(derive ::drop ::action)
+(derive ::complete ::action)
 (derive ::move-left ::action)
 (derive ::move-right ::action)
 (derive ::rotate-left ::action)
@@ -89,23 +89,22 @@
 
 
 (defn interpret-kbd-input [input]
-  (let [key-commands {[[] "w"]              :rotate-right
-                      [["shift"] "w"]       :rotate-left
-                      [[] "a"]              :left
-                      [[] "s"]              :complete
-                      [[] "d"]              :right-right
-                      [["shift"] "d"]       :right-left
+  (let [key-commands {[[] "w"]              ::rotate-right
+                      [["shift"] "w"]       ::rotate-left
+                      [[] "a"]              ::move-left
+                      [[] "s"]              ::complete
+                      [[] "d"]              ::move-right
 
-                      [[] " "]              :complete
+                      [[] " "]              ::complete
 
-                      [[] "arrowup"]        :rotate-right
-                      [["shift"] "arrowup"] :rotate-left
-                      [[] "arrowdown"]      :complete
-                      [[] "arrowleft"]      :left
-                      [[] "arrowright"]     :right
+                      [[] "arrowup"]        ::rotate-right
+                      [["shift"] "arrowup"] ::rotate-left
+                      [[] "arrowdown"]      ::complete
+                      [[] "arrowleft"]      ::move-left
+                      [[] "arrowright"]     ::move-right
 
-                      [[] "enter"]          :rotate-right
-                      [["shift"] "enter"]   :rotate-left}]
+                      [[] "enter"]          ::rotate-right
+                      [["shift"] "enter"]   ::rotate-left}]
     (let [{modifiers :modifiers pressed :pressed} input
           modifiers (filter #{"shift"} modifiers)
           pair [modifiers pressed]]
@@ -227,20 +226,18 @@
 
 
 ;; 1.
-;; interpret keyboard actions - add a unit test
-;; 2.
 ;; display a field in html
 ;; add function for logging that checks dynamically scoped var that is changed via boolean passed to actor
-;; 3.
+;; 2.
 ;; implement renderer
 ;; [{:x x :y y :color color} {:x x :y y :color color}]
-;; 4.
+;; 3.
 ;; implement diff calculator
-;; 5.
+;; 4.
 ;; action handler for :descend
-;; 6.
+;; 5.
 ;; action handler for :rotate
-;; 7.
+;; 6.
 ;; glue together to make game start, generate block, merge it, generate new, lose
 ;;
 ;;

@@ -1,10 +1,69 @@
 (ns gg.tetris-test
-    (:require
-     [cljs.test :refer-macros [deftest is testing]]
-     [gg.tetris]))
+  (:require
+    [cljs.test :refer-macros [deftest is testing]]
+    [gg.tetris :as t :refer []]))
 
-(deftest test-bla
-         (is (= 1 12)))
-
+; docs
 ;https://cljs.github.io/api/cljs.test/
-;https://figwheel.org/config-options#auto-testing
+;https://figwheel.org/config-options
+
+(deftest kbd-interpreter
+  (is (= :gg.tetris/rotate-right
+         (t/interpret-kbd-input {:modifiers [] :pressed "w"}))
+      "wasd rotate right")
+
+  (is (= :gg.tetris/rotate-left
+         (t/interpret-kbd-input {:modifiers ["shift"] :pressed "w"}))
+      "wasd rotate left")
+
+  (is (= :gg.tetris/complete
+         (t/interpret-kbd-input {:modifiers [] :pressed "s"}))
+      "wasd complete")
+
+  (is (= :gg.tetris/move-left
+         (t/interpret-kbd-input {:modifiers [] :pressed "a"}))
+      "wasd left")
+
+  (is (= :gg.tetris/move-right
+         (t/interpret-kbd-input {:modifiers [] :pressed "d"}))
+      "wasd right")
+
+
+
+  (is (= :gg.tetris/rotate-right
+         (t/interpret-kbd-input {:modifiers [] :pressed "arrowup"}))
+      "arrows rotate right")
+
+  (is (= :gg.tetris/rotate-left
+         (t/interpret-kbd-input {:modifiers ["shift"] :pressed "arrowup"}))
+      "arrows rotate left")
+
+  (is (= :gg.tetris/complete
+         (t/interpret-kbd-input {:modifiers [] :pressed "arrowdown"}))
+      "arrows complete")
+
+  (is (= :gg.tetris/move-left
+         (t/interpret-kbd-input {:modifiers [] :pressed "arrowleft"}))
+      "arrows left")
+
+  (is (= :gg.tetris/move-right
+         (t/interpret-kbd-input {:modifiers [] :pressed "arrowright"}))
+      "arrows right")
+
+
+
+  (is (= :gg.tetris/complete
+         (t/interpret-kbd-input {:modifiers [] :pressed " "}))
+      "space complete")
+
+  (is (= :gg.tetris/rotate-right
+         (t/interpret-kbd-input {:modifiers [] :pressed "enter"}))
+      "enter rotate right")
+
+  (is (= :gg.tetris/rotate-left
+         (t/interpret-kbd-input {:modifiers ["shift"] :pressed "enter"}))
+      "enter rotate left"))
+
+
+
+
