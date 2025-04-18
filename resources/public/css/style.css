@@ -1,57 +1,62 @@
 /* some style */
 
-html, body {
-    font-size: 16px;
-    line-height: 1.5;
-    height: 100%;
-    background-color: #fff;
-    color: #444;
-}
+/*table, th, td {*/
+/*    border: 1px solid black;*/
+/*    border-collapse: collapse;*/
+/*}*/
 
-.section-header {
-    padding: 40px 20px;
-}
+/*html, body {*/
+/*    font-size: 16px;*/
+/*    line-height: 1.5;*/
+/*    height: 100%;*/
+/*    background-color: #fff;*/
+/*    color: #444;*/
+/*}*/
 
-.contact-form {
-    padding: 0 20px;
-}
+/*.section-header {*/
+/*    padding: 40px 20px;*/
+/*}*/
 
-.contact-list {
-    display: block;
-    background-color: #fff;
-    border-right: 1px solid #DEDEDE;
-    padding: 40px 20px;
-}
+/*.contact-form {*/
+/*    padding: 0 20px;*/
+/*}*/
 
-.contact-summary {
-    cursor: pointer;
-}
+/*.contact-list {*/
+/*    display: block;*/
+/*    background-color: #fff;*/
+/*    border-right: 1px solid #DEDEDE;*/
+/*    padding: 40px 20px;*/
+/*}*/
 
-.contact-summary.selected {
-    background-color: #f5f5f5;
-    border-right: 3px solid #eee;
-}
+/*.contact-summary {*/
+/*    cursor: pointer;*/
+/*}*/
 
-.contact-summary:hover {
-    color: #000;
-}
+/*.contact-summary.selected {*/
+/*    background-color: #f5f5f5;*/
+/*    border-right: 3px solid #eee;*/
+/*}*/
 
-.delete-icon {
-    display: inline-block;
-    visibility: hidden;
-    padding: 0 8px;
-}
+/*.contact-summary:hover {*/
+/*    color: #000;*/
+/*}*/
 
-.contact-summary:hover .delete-icon {
-    visibility: visible;
-}
+/*.delete-icon {*/
+/*    display: inline-block;*/
+/*    visibility: hidden;*/
+/*    padding: 0 8px;*/
+/*}*/
 
-.contact-summary:hover .delete-icon:hover {
-    color: #f14668;
-}
+/*.contact-summary:hover .delete-icon {*/
+/*    visibility: visible;*/
+/*}*/
 
-.notice {
-    text-align: center;
-    font-style: italic;
-    color: #777;
-}
+/*.contact-summary:hover .delete-icon:hover {*/
+/*    color: #f14668;*/
+/*}*/
+
+/*.notice {*/
+/*    text-align: center;*/
+/*    font-style: italic;*/
+/*    color: #777;*/
+/*}*/

@@ -116,8 +116,6 @@
       (key-commands pair))))
 
 
-(defn cake [] (test/run-all-tests))
-
 ;; -- Map of channels
 ;; kbd listener
 ;;    register what's pressed, e.g. [Shift + Enter]
@@ -137,8 +135,6 @@
 ;;    renderer-calculator-inbox -> renderer-inbox
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
-
-
 (defn run []
   (let [state (init-state 5 20)
 
@@ -189,7 +185,7 @@
            chord-ch
            action-ch
            {}
-           (fn [{input :msg}] {:msg (interpret-kbd-input input)}))
+           (fn [{input :msg}] {:msg (interpret-kbd-input input)})) 8
 
     (actor "kbd listener"
            true
@@ -228,6 +224,61 @@
 (start)
 
 
+(def initial-game-state
+  {:contacts []
+   :selected nil
+   :editing? false})
+
+(def game-container (gdom/getElement "app"))
+
+(defn set-game-html [html-str]
+  (set! (.-innerHTML game-container) html-str))
+
+(defn props [m]
+  (->> m
+       (map (fn [[k v]] (str k ":" v)))
+       (str/join "; ")))
+
+; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
+(defn game-table [height width]
+  (let [square-px 30
+        generate-indexes (fn [n] (->> 0 (iterate inc) (take n)))
+        sizer (fn [items] (str (* items square-px) "px"))
+        table-style (props {"height"          (sizer height)
+                            "width"           (sizer width)
+                            "margin"          "auto"
+                            "border"          "1px solid black"
+                            "border-collapse" "collapse"})
+        cell-id (fn [y x] (str "cell:" y ":" x))
+        create-row (fn [row] (into [:tr]
+                                   (map (fn [col] [:td {:id (cell-id row col) :style "border: 1px solid"} ""])
+                                        (generate-indexes width))))]
+    [:div (into [:table {:style table-style}]
+                (map create-row (reverse (generate-indexes height))))]))
+
+
+(defn render-game! [state]
+  (set-game-html
+    (hiccups/html
+      (game-table 25 15)
+
+      [:div {:class "has-text-centered box table"}
+       [:div
+        [:span "cell1"]
+        [:span "cell2"]
+        [:span "cell3"]]
+       [:div
+        [:span "cell4"]
+        [:span "cell5"]
+        [:span "cell6"]]]
+
+      [:div {:class "contact-details column is-8"}]
+      [:div {:class "hero"}])))
+
+(defn refresh-game! [state]
+  (render-game! state))
+
+(refresh-game! initial-game-state)
 
 
 ;; 1.
@@ -488,10 +539,10 @@
         no-contact-details))))
 
 
-
-;; Running the whole app
-(defn refresh! [state]
-  (render-app! state)
-  (attach-event-handlers! state))
-
-(refresh! initial-state)
+;
+;;; Running the whole app
+;(defn refresh! [state]
+;  (render-app! state)
+;  (attach-event-handlers! state))
+;
+;(refresh! initial-state)
