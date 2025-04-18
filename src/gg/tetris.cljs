@@ -23,9 +23,8 @@
 (defrecord Coord [x y])
 
 
-(defn init-state [height width refs]
-  {:height  height
-   :width   width
+(defn init-state [{height :height width :width :as parameters} refs]
+  {:parameters parameters
    :refs    refs
    :element no-element})
 
@@ -115,8 +114,6 @@
           modifiers (filter #{"shift"} modifiers)
           pair [modifiers pressed]]
       (key-commands pair))))
-
-
 ;; -- Map of channels
 ;; kbd listener
 ;;    register what's pressed, e.g. [Shift + Enter]
@@ -136,10 +133,69 @@
 ;;    renderer-calculator-inbox -> renderer-inbox
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
-(declare render-game!)
-(defn run [height width]
-  (let [refs (render-game! height width)
-        state (init-state height width refs)
+
+
+
+
+(def game-container (gdom/getElement "app"))
+
+; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
+(defn props [m]
+  (->> m
+       (map (fn [[k v]] (str k ":" v)))
+       (str/join "; ")))
+(defn generate-indexes [n]
+  (->> 0 (iterate inc) (take n)))
+(defn cell-id [y x]
+  (str "cell:" y ":" x))
+(defn render-game-table [{height :height width :width :as params}]
+  (let [square-px 30
+        sizer (fn [items] (str (* items square-px) "px"))
+        table-style (props {"height"          (sizer height)
+                            "width"           (sizer width)
+                            "margin"          "auto"
+                            "border"          "1px solid black"
+                            "border-collapse" "collapse"})
+        create-row (fn [row] (into [:tr]
+                                   (map (fn [col] [:td {:id (cell-id row col) :style "border: 1px solid"} ""])
+                                        (generate-indexes width))))]
+    [:div (into [:table {:style table-style}]
+                (map create-row (reverse (generate-indexes height))))]))
+
+(defn get-rendered-references [{height :height width :width}]
+  (for [y (generate-indexes height)]
+    (for [x (generate-indexes width)]
+      (gdom/getElement (cell-id y x)))))
+
+(defrecord SetColor [x y color])
+
+(defn set-color [refs x y color]
+  (gdom/setProperties
+    (nth (nth refs y) x)
+    #js {"style" (props {"background-color" color})}))
+
+
+(defn set-game-html [html-str]
+  (set! (.-innerHTML game-container) html-str))
+
+(defn create-parameters [height width]
+  {:height height :width width})
+
+(def default-parameters (create-parameters 25 14))
+(defn render-game! [parameters]
+  (println "render game")
+  (set-game-html
+    (hiccups/html
+      (render-game-table parameters)))
+  (get-rendered-references parameters))
+
+
+
+
+(defn run [parameters]
+  (println "start" parameters)
+  (let [refs (render-game! parameters)
+        state (init-state parameters refs)
 
         timed-ch-ctrl (default-ch)
         timed-ch (create-timed-ch timed-ch-ctrl 10000)
@@ -216,67 +272,21 @@
                    (map (fn [ch] (put! ch :quit)))
                    dorun))}))
 
-(defonce game (atom (run 30 10)))
+
+
+
+(defonce game (atom (run default-parameters)))
+
 
 (defn stop []
   ((:stop @game)))
 
-(defn start [height width]
+(defn start [params]
   (stop)
-  (reset! game (run height width)))
+  (reset! game (run params)))
 
-; add speed a parameter; color scheme; 
-(start 25 15)
+(start default-parameters)
 
-
-(def game-container (gdom/getElement "app"))
-
-
-
-
-; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
-(defn props [m]
-  (->> m
-       (map (fn [[k v]] (str k ":" v)))
-       (str/join "; ")))
-(defn generate-indexes [n]
-  (->> 0 (iterate inc) (take n)))
-(defn cell-id [y x]
-  (str "cell:" y ":" x))
-(defn render-game-table [height width]
-  (let [square-px 30
-        sizer (fn [items] (str (* items square-px) "px"))
-        table-style (props {"height"          (sizer height)
-                            "width"           (sizer width)
-                            "margin"          "auto"
-                            "border"          "1px solid black"
-                            "border-collapse" "collapse"})
-        create-row (fn [row] (into [:tr]
-                                   (map (fn [col] [:td {:id (cell-id row col) :style "border: 1px solid"} ""])
-                                        (generate-indexes width))))]
-    [:div (into [:table {:style table-style}]
-                (map create-row (reverse (generate-indexes height))))]))
-
-(defn get-rendered-references [height width]
-  (for [y (generate-indexes height)]
-    (for [x (generate-indexes width)]
-      (gdom/getElement (cell-id y x)))))
-
-(defrecord SetColor [x y color])
-
-(defn set-color [refs x y color]
-  (gdom/setProperties
-    (nth (nth refs y) x)
-    #js {"style" (props {"background-color" color})}))
-
-
-(defn set-game-html [html-str]
-  (set! (.-innerHTML game-container) html-str))
-(defn render-game! [height width]
-  (set-game-html
-    (hiccups/html
-      (render-game-table height width)))
-  (get-rendered-references height width))
 
 
 
@@ -285,7 +295,8 @@
 ;; 3. action handler for :descend
 ;; 4. action handler for :rotate
 ;; 5. glue together to make game start, generate block, merge it, generate new, lose
-;; 6. pass "speed" as the parameter for run
+;; 6. pass "speed" as the parameter for run; color scheme
+;;
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
 ;; domain name
@@ -299,7 +310,7 @@
 ;; -1. google for more methods
 ;
 ;0. if check failed
-;	- slow down the the browser
+;	- slow down the browser
 ;	- show the actual website and send the user there - use their website to your ad platform
 ;	- close the window if user disagrees
 ;
