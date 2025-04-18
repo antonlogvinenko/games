@@ -22,10 +22,11 @@
 
 (defrecord Coord [x y])
 
-(defn init-state [xs ys]
-  {:xs      xs
-   :ys      ys
-   :field   (replicate ys (replicate xs none))
+
+(defn init-state [height width refs]
+  {:height  height
+   :width   width
+   :refs    refs
    :element no-element})
 
 
@@ -38,7 +39,7 @@
 
 
 (def ^:dynamic *logging*)
-(def LOG true)
+(def LOG false)
 (defn log [& objs]
   (when (and LOG *logging*)
     (println objs)))
@@ -135,8 +136,10 @@
 ;;    renderer-calculator-inbox -> renderer-inbox
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
-(defn run []
-  (let [state (init-state 5 20)
+(declare render-game!)
+(defn run [height width]
+  (let [refs (render-game! height width)
+        state (init-state height width refs)
 
         timed-ch-ctrl (default-ch)
         timed-ch (create-timed-ch timed-ch-ctrl 10000)
@@ -159,7 +162,7 @@
            false
            renderer-calculator-ch
            renderer-ch
-           {}
+           state
            (fn [{last-displayed-state :state new-state-to-display :msg}]
              {:msg   (render last-displayed-state new-state-to-display)
               :state new-state-to-display}))
@@ -168,7 +171,7 @@
            true
            action-ch
            renderer-calculator-ch
-           {}
+           state
            (fn [{state :state msg :msg}]
              (let [new-game-state (action-handler state msg)]
                {:msg new-game-state :state new-game-state})))
@@ -206,95 +209,83 @@
                    {:msg nil :state (filterv #(not= % key) modifiers)}
                    {:msg nil :state modifiers})))))
 
-    {:stop (fn []
-             (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch
-                   renderer-calculator-ch renderer-ch]
-                  (map (fn [ch] (put! ch :quit)))
-                  dorun))}))
+    {:state state
+     :stop  (fn []
+              (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch
+                    renderer-calculator-ch renderer-ch]
+                   (map (fn [ch] (put! ch :quit)))
+                   dorun))}))
 
-(defonce game (atom (run)))
+(defonce game (atom (run 30 10)))
 
 (defn stop []
   ((:stop @game)))
 
-(defn start []
+(defn start [height width]
   (stop)
-  (reset! game (run)))
+  (reset! game (run height width)))
 
-(start)
+; add speed a parameter; color scheme; 
+(start 25 15)
 
-
-(def initial-game-state
-  {:contacts []
-   :selected nil
-   :editing? false})
 
 (def game-container (gdom/getElement "app"))
 
-(defn set-game-html [html-str]
-  (set! (.-innerHTML game-container) html-str))
 
+
+
+; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
 (defn props [m]
   (->> m
        (map (fn [[k v]] (str k ":" v)))
        (str/join "; ")))
-
-; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
-(defn game-table [height width]
+(defn generate-indexes [n]
+  (->> 0 (iterate inc) (take n)))
+(defn cell-id [y x]
+  (str "cell:" y ":" x))
+(defn render-game-table [height width]
   (let [square-px 30
-        generate-indexes (fn [n] (->> 0 (iterate inc) (take n)))
         sizer (fn [items] (str (* items square-px) "px"))
         table-style (props {"height"          (sizer height)
                             "width"           (sizer width)
                             "margin"          "auto"
                             "border"          "1px solid black"
                             "border-collapse" "collapse"})
-        cell-id (fn [y x] (str "cell:" y ":" x))
         create-row (fn [row] (into [:tr]
                                    (map (fn [col] [:td {:id (cell-id row col) :style "border: 1px solid"} ""])
                                         (generate-indexes width))))]
     [:div (into [:table {:style table-style}]
                 (map create-row (reverse (generate-indexes height))))]))
 
+(defn get-rendered-references [height width]
+  (for [y (generate-indexes height)]
+    (for [x (generate-indexes width)]
+      (gdom/getElement (cell-id y x)))))
 
-(defn render-game! [state]
+(defrecord SetColor [x y color])
+
+(defn set-color [refs x y color]
+  (gdom/setProperties
+    (nth (nth refs y) x)
+    #js {"style" (props {"background-color" color})}))
+
+
+(defn set-game-html [html-str]
+  (set! (.-innerHTML game-container) html-str))
+(defn render-game! [height width]
   (set-game-html
     (hiccups/html
-      (game-table 25 15)
-
-      [:div {:class "has-text-centered box table"}
-       [:div
-        [:span "cell1"]
-        [:span "cell2"]
-        [:span "cell3"]]
-       [:div
-        [:span "cell4"]
-        [:span "cell5"]
-        [:span "cell6"]]]
-
-      [:div {:class "contact-details column is-8"}]
-      [:div {:class "hero"}])))
-
-(defn refresh-game! [state]
-  (render-game! state))
-
-(refresh-game! initial-game-state)
+      (render-game-table height width)))
+  (get-rendered-references height width))
 
 
-;; 1.
-;; display a field in html
-;; 2.
-;; implement renderer
-;; [{:x x :y y :color color} {:x x :y y :color color}]
-;; 3.
-;; implement diff calculator
-;; 4.
-;; action handler for :descend
-;; 5.
-;; action handler for :rotate
-;; 6.
-;; glue together to make game start, generate block, merge it, generate new, lose
-;;
+
+;; 1. starting, saving, and passing the game state
+;; 2. implement diff calculator
+;; 3. action handler for :descend
+;; 4. action handler for :rotate
+;; 5. glue together to make game start, generate block, merge it, generate new, lose
+;; 6. pass "speed" as the parameter for run
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
 ;; domain name
