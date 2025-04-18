@@ -37,11 +37,15 @@
 (derive ::rotate-right ::action)
 
 
-
+(def ^:dynamic *logging*)
+(def LOG true)
+(defn log [& objs]
+  (when (and LOG *logging*)
+    (println objs)))
 
 
 (defn action-handler [game-state msg]
-  (println "This is inside action handler" msg)
+  (log "This is inside action handler" msg)
   game-state)
 
 (defn listen [down-listener up-listener]
@@ -67,13 +71,14 @@
 (defn actor [id logging inbox outbox state fn]
   (println "Starting actor" id)
   (go-loop [state state]
-           (let [msg-in (<! inbox)]
-             (when logging (println "[" id "]" "received a message" msg-in))
-             (if (= msg-in :quit)
-               (println "Quitting" id)
-               (let [{msg-out :msg new-state :state} (fn {:state state :msg msg-in})]
-                 (when msg-out (>! outbox msg-out))
-                 (recur new-state))))))
+           (binding [*logging* logging]
+             (let [msg-in (<! inbox)]
+               (log "[" id "]" "received a message" msg-in)
+               (if (= msg-in :quit)
+                 (log "Quitting" id)
+                 (let [{msg-out :msg new-state :state} (fn {:state state :msg msg-in})]
+                   (when msg-out (>! outbox msg-out))
+                   (recur new-state)))))))
 
 (defn create-timed-ch [ctrl interval-ms]
   (let [inbox (chan)]
@@ -138,7 +143,7 @@
   (let [state (init-state 5 20)
 
         timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 30000)
+        timed-ch (create-timed-ch timed-ch-ctrl 10000)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -148,7 +153,7 @@
         chord-ch (default-ch)]
 
     (actor "renderer"
-           false
+           true
            renderer-ch
            null-inbox
            {}
@@ -164,7 +169,7 @@
               :state new-state-to-display}))
 
     (actor "action handler"
-           false
+           true
            action-ch
            renderer-calculator-ch
            {}
@@ -173,7 +178,7 @@
                {:msg new-game-state :state new-game-state})))
 
     (actor "ticker"
-           false
+           true
            timed-ch
            action-ch
            {}
@@ -227,7 +232,6 @@
 
 ;; 1.
 ;; display a field in html
-;; add function for logging that checks dynamically scoped var that is changed via boolean passed to actor
 ;; 2.
 ;; implement renderer
 ;; [{:x x :y y :color color} {:x x :y y :color color}]
