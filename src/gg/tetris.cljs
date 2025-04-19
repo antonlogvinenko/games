@@ -22,13 +22,37 @@
 (def filled 1)
 (defn none? [cell] (== cell none))
 (defn filled? [cell] (== cell filled))
+(defrecord SetColor [x y color])
 
 (def no-element nil)
 
+;; State represents UI field in (x,y) coords
+;;
+;; x: left to right
+;; y: bottom to top
+;;
+;; Following field...
+;; 6 7 8
+;; 3 4 5
+;; 0 1 2
+;; ... is stored like this:
+;; [[0 1 2] [3 4 5] [6 7 8]]
+(defn create-empty-field [height width]
+  (repeat height (repeat width 0)))
+(defn at-coord [vec x y]
+  (nth (nth vec y) x))
+
+(defn state-diff [state-a state-b]
+  (for [[y [row-a row-b]] (map-indexed vector (map vector state-a state-b))
+        [x [a b]] (map-indexed vector (map vector row-a row-b))
+        :when (not= a b)]
+    (SetColor x y b)))
+
+
 (defn init-state [{height :height width :width :as parameters} refs]
   {:parameters parameters
-   :refs    refs
-   :element no-element})
+   :refs       refs
+   :element    no-element})
 
 
 
@@ -40,8 +64,6 @@
   (->> m
        (map (fn [[k v]] (str k ":" v)))
        (str/join "; ")))
-(defn generate-indexes [n]
-  (->> 0 (iterate inc) (take n)))
 (defn cell-id [y x]
   (str "cell:" y ":" x))
 (defn render-game-table [{height :height width :width :as params}]
@@ -54,16 +76,15 @@
                             "border-collapse" "collapse"})
         create-row (fn [row] (into [:tr]
                                    (map (fn [col] [:td {:id (cell-id row col) :style "border: 1px solid"} ""])
-                                        (generate-indexes width))))]
+                                        (range width))))]
     [:div (into [:table {:style table-style}]
-                (map create-row (reverse (generate-indexes height))))]))
+                (map create-row (reverse (range height))))]))
 
 (defn get-rendered-references [{height :height width :width}]
-  (for [y (generate-indexes height)]
-    (for [x (generate-indexes width)]
+  (for [y (range height)]
+    (for [x (range width)]
       (gdom/getElement (cell-id y x)))))
 
-(defrecord SetColor [x y color])
 
 (defn set-color [refs x y color]
   (gdom/setProperties
@@ -228,7 +249,7 @@
            chord-ch
            action-ch
            {}
-           (fn [{input :msg}] {:msg (interpret-kbd-input input)})) 8
+           (fn [{input :msg}] {:msg (interpret-kbd-input input)}))
 
     (actor "kbd listener"
            true
@@ -270,12 +291,10 @@
 
 
 
-
-;; 2. implement diff calculator
-;; 3. action handler for :descend
-;; 4. action handler for :rotate
-;; 5. glue together to make game start, generate block, merge it, generate new, lose
-;; 6. pass "speed" as the parameter for run; color scheme
+;; 1. action handler for :descend
+;; 2. action handler for :rotate
+;; 3. glue together to make game start, generate block, merge it, generate new, lose
+;; 4. pass "speed" as the parameter for run; color scheme
 ;;
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
