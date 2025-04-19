@@ -7,6 +7,20 @@
 ;https://cljs.github.io/api/cljs.test/
 ;https://figwheel.org/config-options
 
+(deftest field-diff
+  (is (empty?
+        (t/field-diff [] []))
+      "empty field")
+
+  (is (empty?
+        (t/field-diff [[0 0 0] [0 0 0] [0 0 0]] [[0 0 0] [0 0 0] [0 0 0]]))
+      "empty result")
+
+  (is (=
+        [(t/SetColor. 1 1 0) (t/SetColor. 2 2 1)]
+        (t/field-diff [[0 0 0] [0 1 0] [0 0 0]] [[0 0 0] [0 0 0] [0 0 1]]))
+      "non empty result"))
+
 (deftest kbd-interpreter
   (is (= :gg.tetris/rotate-right
          (t/interpret-kbd-input {:modifiers [] :pressed "w"}))

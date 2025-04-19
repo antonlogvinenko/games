@@ -39,14 +39,11 @@
 ;; [[0 1 2] [3 4 5] [6 7 8]]
 (defn create-empty-field [height width]
   (repeat height (repeat width 0)))
-(defn at-coord [vec x y]
-  (nth (nth vec y) x))
-
-(defn state-diff [state-a state-b]
+(defn field-diff [state-a state-b]
   (for [[y [row-a row-b]] (map-indexed vector (map vector state-a state-b))
         [x [a b]] (map-indexed vector (map vector row-a row-b))
         :when (not= a b)]
-    (SetColor x y b)))
+    (SetColor. x y b)))
 
 
 (defn init-state [{height :height width :width :as parameters} refs]
