@@ -4,10 +4,16 @@
             [goog.dom :as gdom]
             [goog.events :as gevents]
             [cljs.core.async :refer [go-loop go <! >! timeout chan put! alts!] :as async]
-            [cljs.core :as core]
-            [cljs.test :as test]
             [clojure.string :as str]))
 
+
+
+;; -- Logging
+(def ^:dynamic *logging*)
+(def LOG false)
+(defn log [& objs]
+  (when (and LOG *logging*)
+    (println objs)))
 
 
 
@@ -18,10 +24,6 @@
 (defn filled? [cell] (== cell filled))
 
 (def no-element nil)
-(defn has-element? [elem] (seq? elem))
-
-(defrecord Coord [x y])
-
 
 (defn init-state [{height :height width :width :as parameters} refs]
   {:parameters parameters
@@ -29,114 +31,8 @@
    :element no-element})
 
 
-(derive ::descend ::action)
-(derive ::complete ::action)
-(derive ::move-left ::action)
-(derive ::move-right ::action)
-(derive ::rotate-left ::action)
-(derive ::rotate-right ::action)
 
-
-(def ^:dynamic *logging*)
-(def LOG false)
-(defn log [& objs]
-  (when (and LOG *logging*)
-    (println objs)))
-
-
-(defn action-handler [game-state msg]
-  (log "This is inside action handler" msg)
-  game-state)
-
-(defn listen [down-listener up-listener]
-  (gevents/listen js/document "keydown" down-listener)
-  (gevents/listen js/document "keyup" up-listener))
-
-(defn create-kbd-ch []
-  (let [kbd-inbox (chan)]
-    (listen #(put! kbd-inbox {:action :down :key (.-key %)})
-            #(put! kbd-inbox {:action :up :key (.-key %)}))
-    kbd-inbox))
-
-
-
-
-
-(defn render [last-displayed-state new-state]
-  {})
-
-;; fn : {:msg msg-in :state} -> {:msg msg-out :state state}
-;; if msg-out is nil, the message is not sent to channel, only recur is performed
-;; current state of the actor is replaced with the state that the function returns
-(defn actor [id logging inbox outbox state fn]
-  (println "Starting actor" id)
-  (go-loop [state state]
-           (binding [*logging* logging]
-             (let [msg-in (<! inbox)]
-               (log "[" id "]" "received a message" msg-in)
-               (if (= msg-in :quit)
-                 (log "Quitting" id)
-                 (let [{msg-out :msg new-state :state} (fn {:state state :msg msg-in})]
-                   (when msg-out (>! outbox msg-out))
-                   (recur new-state)))))))
-
-(defn create-timed-ch [ctrl interval-ms]
-  (let [inbox (chan)]
-    (go-loop []
-             (let [[v ch] (alts! [ctrl (timeout interval-ms)])]
-               (when (and (= ch ctrl) (= v :quit)) nil)
-               (>! inbox {})
-               (recur)))
-    inbox))
-
-(defn default-ch [] (chan (async/sliding-buffer 10)))
-
-
-
-(defn interpret-kbd-input [input]
-  (let [key-commands {[[] "w"]              ::rotate-right
-                      [["shift"] "w"]       ::rotate-left
-                      [[] "a"]              ::move-left
-                      [[] "s"]              ::complete
-                      [[] "d"]              ::move-right
-
-                      [[] " "]              ::complete
-
-                      [[] "arrowup"]        ::rotate-right
-                      [["shift"] "arrowup"] ::rotate-left
-                      [[] "arrowdown"]      ::complete
-                      [[] "arrowleft"]      ::move-left
-                      [[] "arrowright"]     ::move-right
-
-                      [[] "enter"]          ::rotate-right
-                      [["shift"] "enter"]   ::rotate-left}]
-    (let [{modifiers :modifiers pressed :pressed} input
-          modifiers (filter #{"shift"} modifiers)
-          pair [modifiers pressed]]
-      (key-commands pair))))
-;; -- Map of channels
-;; kbd listener
-;;    register what's pressed, e.g. [Shift + Enter]
-;;    kbd-inbox -> chord-inbox
-;; keyboard-interpreter
-;;    interpret what was entered via keyboard, e.g. [Shift + Enter] -> :rotate
-;;    chord-inbox -> action-inbox
-;; ticker
-;;    regularly descend the current element
-;;    timed-inbox -> action-inbox
-;;
-;;
-;; action-handler:
-;;    action-inbox -> renderer-calculator-inbox
-;;
-;; renderer calculator:
-;;    renderer-calculator-inbox -> renderer-inbox
-;; renderer:
-;;    renderer-inbox -> null-inbox
-
-
-
-
+;; - Game UI
 (def game-container (gdom/getElement "app"))
 
 ; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
@@ -183,7 +79,6 @@
 
 (def default-parameters (create-parameters 25 14))
 (defn render-game! [parameters]
-  (println "render game")
   (set-game-html
     (hiccups/html
       (render-game-table parameters)))
@@ -191,9 +86,98 @@
 
 
 
+;; -- Game logic
+(defn action-handler [game-state msg]
+  (log "This is inside action handler" msg)
+  game-state)
 
-(defn run [parameters]
-  (println "start" parameters)
+(defn render [last-displayed-state new-state]
+  {})
+
+(defn listen [down-listener up-listener]
+  (gevents/listen js/document "keydown" down-listener)
+  (gevents/listen js/document "keyup" up-listener))
+
+(defn create-kbd-ch []
+  (let [kbd-inbox (chan)]
+    (listen #(put! kbd-inbox {:action :down :key (.-key %)})
+            #(put! kbd-inbox {:action :up :key (.-key %)}))
+    kbd-inbox))
+
+;; fn : {:msg msg-in :state} -> {:msg msg-out :state state}
+;; if msg-out is nil, the message is not sent to channel, only recur is performed
+;; current state of the actor is replaced with the state that the function returns
+(defn actor [id logging inbox outbox state fn]
+  (println "Starting actor" id)
+  (go-loop [state state]
+           (binding [*logging* logging]
+             (let [msg-in (<! inbox)]
+               (log "[" id "]" "received a message" msg-in)
+               (if (= msg-in :quit)
+                 (log "Quitting" id)
+                 (let [{msg-out :msg new-state :state} (fn {:state state :msg msg-in})]
+                   (when msg-out (>! outbox msg-out))
+                   (recur new-state)))))))
+
+(defn create-timed-ch [ctrl interval-ms]
+  (let [inbox (chan)]
+    (go-loop []
+             (let [[v ch] (alts! [ctrl (timeout interval-ms)])]
+               (when (and (= ch ctrl) (= v :quit)) nil)
+               (>! inbox {})
+               (recur)))
+    inbox))
+
+(defn default-ch [] (chan (async/sliding-buffer 10)))
+
+(derive ::descend ::action)
+(derive ::complete ::action)
+(derive ::move-left ::action)
+(derive ::move-right ::action)
+(derive ::rotate-left ::action)
+(derive ::rotate-right ::action)
+
+(defn interpret-kbd-input [input]
+  (let [key-commands {[[] "w"]              ::rotate-right
+                      [["shift"] "w"]       ::rotate-left
+                      [[] "a"]              ::move-left
+                      [[] "s"]              ::complete
+                      [[] "d"]              ::move-right
+
+                      [[] " "]              ::complete
+
+                      [[] "arrowup"]        ::rotate-right
+                      [["shift"] "arrowup"] ::rotate-left
+                      [[] "arrowdown"]      ::complete
+                      [[] "arrowleft"]      ::move-left
+                      [[] "arrowright"]     ::move-right
+
+                      [[] "enter"]          ::rotate-right
+                      [["shift"] "enter"]   ::rotate-left}]
+    (let [{modifiers :modifiers pressed :pressed} input
+          modifiers (filter #{"shift"} modifiers)
+          pair [modifiers pressed]]
+      (key-commands pair))))
+;; -- Map of channels
+;; kbd listener
+;;    register what's pressed, e.g. [Shift + Enter]
+;;    kbd-inbox -> chord-inbox
+;; keyboard-interpreter
+;;    interpret what was entered via keyboard, e.g. [Shift + Enter] -> :rotate
+;;    chord-inbox -> action-inbox
+;; ticker
+;;    regularly descend the current element
+;;    timed-inbox -> action-inbox
+;;
+;;
+;; action-handler:
+;;    action-inbox -> renderer-calculator-inbox
+;;
+;; renderer calculator:
+;;    renderer-calculator-inbox -> renderer-inbox
+;; renderer:
+;;    renderer-inbox -> null-inbox
+(defn run-game! [parameters]
   (let [refs (render-game! parameters)
         state (init-state parameters refs)
 
@@ -272,25 +256,21 @@
                    (map (fn [ch] (put! ch :quit)))
                    dorun))}))
 
+(defonce game (atom (run-game! default-parameters)))
 
-
-
-(defonce game (atom (run default-parameters)))
-
-
-(defn stop []
+(defn stop! []
   ((:stop @game)))
 
-(defn start [params]
-  (stop)
-  (reset! game (run params)))
+(defn start! [params]
+  (stop!)
+  (reset! game (run-game! params)))
 
-(start default-parameters)
-
-
+(start! default-parameters)
 
 
-;; 1. starting, saving, and passing the game state
+
+
+
 ;; 2. implement diff calculator
 ;; 3. action handler for :descend
 ;; 4. action handler for :rotate
