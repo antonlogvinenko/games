@@ -10,7 +10,7 @@
 
 ;; -- Logging
 (def ^:dynamic *logging*)
-(def LOG false)
+(def LOG true)
 (defn log [& objs]
   (when (and LOG *logging*)
     (println objs)))
@@ -25,6 +25,7 @@
 (defrecord SetColor [x y color])
 
 (def no-element nil)
+(def element [])
 
 ;; State represents UI field in (x,y) coords
 ;;
@@ -46,10 +47,11 @@
     (SetColor. x y b)))
 
 
-(defn init-state [{height :height width :width :as parameters} refs]
-  {:parameters parameters
-   :refs       refs
-   :element    no-element})
+(defn init-state [{height :height width :width} refs]
+  {:height  height
+   :width   width
+   :refs    refs
+   :element no-element})
 
 
 
@@ -63,7 +65,7 @@
        (str/join "; ")))
 (defn cell-id [y x]
   (str "cell:" y ":" x))
-(defn render-game-table [{height :height width :width :as params}]
+(defn render-game-table [{height :height width :width}]
   (let [square-px 30
         sizer (fn [items] (str (* items square-px) "px"))
         table-style (props {"height"          (sizer height)
@@ -105,9 +107,14 @@
 
 
 ;; -- Game logic
-(defn action-handler [game-state msg]
+(defn descend-handler [state]
+  (log "descend handler called")
+  state)
+(def handlers
+  {:descend descend-handler})
+(defn action-handler [state msg]
   (log "This is inside action handler" msg)
-  game-state)
+  ((get handlers msg identity) state))
 
 (defn render [last-displayed-state new-state]
   {})
@@ -128,9 +135,9 @@
 (defn actor [id logging inbox outbox state fn]
   (println "Starting actor" id)
   (go-loop [state state]
-           (binding [*logging* logging]
-             (let [msg-in (<! inbox)]
-               (log "[" id "]" "received a message" msg-in)
+           (let [msg-in (<! inbox)]
+             (binding [*logging* logging]
+               (log "[" id "]" "received a message" (subs (str msg-in) 0 20))
                (if (= msg-in :quit)
                  (log "Quitting" id)
                  (let [{msg-out :msg new-state :state} (fn {:state state :msg msg-in})]
@@ -195,12 +202,17 @@
 ;;    renderer-calculator-inbox -> renderer-inbox
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
-(defn run-game! [parameters]
+;;
+(defonce game (atom {:stop #()}))
+(defn stop! []
+  ((:stop @game)))
+(defn start! [parameters]
+  (stop!)
   (let [refs (render-game! parameters)
         state (init-state parameters refs)
 
         timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 10000)
+        timed-ch (create-timed-ch timed-ch-ctrl 5000)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -210,7 +222,7 @@
         chord-ch (default-ch)]
 
     (actor "renderer"
-           true
+           false
            renderer-ch
            null-inbox
            {}
@@ -235,21 +247,21 @@
                {:msg new-game-state :state new-game-state})))
 
     (actor "ticker"
-           true
+           false
            timed-ch
            action-ch
            {}
            (fn [{msg :msg}] {:msg :descend}))
 
     (actor "kbd interpreter"
-           true
+           false
            chord-ch
            action-ch
            {}
            (fn [{input :msg}] {:msg (interpret-kbd-input input)}))
 
     (actor "kbd listener"
-           true
+           false
            kbd-ch
            chord-ch
            []
@@ -267,21 +279,14 @@
                    {:msg nil :state (filterv #(not= % key) modifiers)}
                    {:msg nil :state modifiers})))))
 
-    {:state state
-     :stop  (fn []
-              (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch
-                    renderer-calculator-ch renderer-ch]
-                   (map (fn [ch] (put! ch :quit)))
-                   dorun))}))
+    (reset! game {:state state
+                  :stop  (fn []
+                           (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch
+                                 renderer-calculator-ch renderer-ch]
+                                (map (fn [ch] (put! ch :quit)))
+                                dorun))})
+    nil))
 
-(defonce game (atom (run-game! default-parameters)))
-
-(defn stop! []
-  ((:stop @game)))
-
-(defn start! [params]
-  (stop!)
-  (reset! game (run-game! params)))
 
 (start! default-parameters)
 
@@ -289,10 +294,17 @@
 
 
 ;; 1. action handler for :descend
+;; - no figure - generate
+;; - save generated figure to the state
+;; - place generated figure in the UI
+;;
+;;
+;; also, fix the logging per go-loop
+;;
 ;; 2. action handler for :rotate
 ;; 3. glue together to make game start, generate block, merge it, generate new, lose
 ;; 4. pass "speed" as the parameter for run; color scheme
-;;
+;; 5. more advanced figures
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
 ;; domain name
