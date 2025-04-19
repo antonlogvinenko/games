@@ -295,16 +295,17 @@
 
 ;; 1. action handler for :descend
 ;; - no figure - generate
+;; - has figure - update coordinates
 ;; - save generated figure to the state
 ;; - place generated figure in the UI
 ;;
+;; 2. glue together to make game start, generate block, merge it, generate new, lose
 ;;
-;; also, fix the logging per go-loop
+;; 3. movement: left, right
 ;;
-;; 2. action handler for :rotate
-;; 3. glue together to make game start, generate block, merge it, generate new, lose
-;; 4. pass "speed" as the parameter for run; color scheme
-;; 5. more advanced figures
+;; 1. pass "speed" as the parameter for run; color scheme
+;; 2. more advanced figures
+;; 3. other movements: rotate, complete
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
 ;; domain name
