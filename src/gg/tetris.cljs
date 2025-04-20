@@ -110,29 +110,24 @@
 ;; -- Game logic
 (defn at [table x y]
   (nth (nth table y) x))
-(defn can-descend [state]
-  (let [{width :width height :height shape :shape} (:element state)
+(defn can-descend [{{width :width height :height shape :shape} :element
+                    field                                      :field}]
+  (let [can-not-descend-cell (fn [[x y]] (or (= y 0) (->> y dec (at field x) (= 1))))
         bottom-coords (for [x (range width)]
-                        {:x x
-                         :y (->> height
-                                 range
-                                 (filter (fn [y] (->> y (at shape x) (= 1))))
-                                 first)})]
-    bottom-coords))
-
-;; (->> height range (filter #(= 1 (at shape x %))) (take 1))
-;; todo false if for any bottom-coord the predicate is broken
-;; todo the predicate is: y != 0 && (x,y-1) is not 1 in the field
-
+                        [x (->> height
+                                range
+                                (filter (fn [y] (->> y (at shape x) (= 1))))
+                                first)])]
+    (->> bottom-coords
+         (filter can-not-descend-cell)
+         empty?)))
 
 
 (defn merge-if-needed [state] state)
 ;;todo if merged, drop one item in elements stream
-;;
 (defn game-over [state] state)
 (defn descend [state]
   (update state :y dec))
-
 (defn descend-handler [state] state)
 ;(if (-> state can-descend not)
 ;  (game-over state)
