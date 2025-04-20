@@ -25,7 +25,6 @@
 (defrecord SetColor [x y color])
 
 (def no-element nil)
-(def element [])
 
 ;; State represents UI field in (x,y) coords
 ;;
@@ -38,21 +37,24 @@
 ;; 0 1 2
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
-(defn create-empty-field [height width]
-  (repeat height (repeat width 0)))
 (defn field-diff [state-a state-b]
   (for [[y [row-a row-b]] (map-indexed vector (map vector state-a state-b))
         [x [a b]] (map-indexed vector (map vector row-a row-b))
         :when (not= a b)]
     (SetColor. x y b)))
 
-
+(def elements [{:height 1 :width 1 :shape [[1]]}])
+(defn random-element []
+  (-> elements count rand-int (partial nth elements)))
 (defn init-state [{height :height width :width} refs]
   {:height  height
    :width   width
    :refs    refs
-   :element no-element})
-
+   ;;left-bottom corner of the object
+   :x       -1
+   :y       -1
+   :element (random-element)
+   :field   (repeat height (repeat width none))})
 
 
 ;; - Game UI
@@ -107,9 +109,23 @@
 
 
 ;; -- Game logic
-(defn descend-handler [state]
-  (log "descend handler called")
-  state)
+(defn can-descend [state]
+  (let [{width :width height :height shape :shape} (:element state)]
+    (for [x (range width)
+          y (range height)]
+      [:x x :y y])))
+
+
+(defn merge-if-needed [state] state)                        ;;todo if merged, drop one item in elements stream
+(defn game-over [state] state)
+(defn descend [state]
+  (update state :y dec))
+
+(defn descend-handler [state] state)
+;(if (-> state can-descend not)
+;  (game-over state)
+;  (-> state descend merge-if-needed))
+
 (def handlers
   {:descend descend-handler})
 (defn action-handler [state msg]
@@ -203,6 +219,8 @@
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
 ;;
+;;
+(defn generate-scene [msg] {})
 (defonce game (atom {:stop #()}))
 (defn stop! []
   ((:stop @game)))
@@ -219,6 +237,7 @@
         renderer-ch (default-ch)
         renderer-calculator-ch (default-ch)
         action-ch (default-ch)
+        scene-ch (default-ch)
         chord-ch (default-ch)]
 
     (actor "renderer"
@@ -232,15 +251,24 @@
            false
            renderer-calculator-ch
            renderer-ch
-           state
+           {}
            (fn [{last-displayed-state :state new-state-to-display :msg}]
              {:msg   (render last-displayed-state new-state-to-display)
               :state new-state-to-display}))
 
+    (actor "scene generator"
+           true
+           scene-ch
+           renderer-calculator-ch
+           {}
+           (fn [{msg :msg}]
+             (let [scene (generate-scene msg)]
+               {:msg scene})))
+
     (actor "action handler"
            true
            action-ch
-           renderer-calculator-ch
+           scene-ch
            state
            (fn [{state :state msg :msg}]
              (let [new-game-state (action-handler state msg)]
@@ -281,7 +309,7 @@
 
     (reset! game {:state state
                   :stop  (fn []
-                           (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch
+                           (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch scene-ch
                                  renderer-calculator-ch renderer-ch]
                                 (map (fn [ch] (put! ch :quit)))
                                 dorun))})
@@ -294,18 +322,12 @@
 
 
 ;; 1. action handler for :descend
-;; - no figure - generate
-;; - has figure - update coordinates
-;; - save generated figure to the state
-;; - place generated figure in the UI
+;; 2. implement scene generator
+;; 3. glue together to make game start, generate trivial block, merge it, generate new, lose
 ;;
-;; 2. glue together to make game start, generate block, merge it, generate new, lose
-;;
-;; 3. movement: left, right
-;;
-;; 1. pass "speed" as the parameter for run; color scheme
-;; 2. more advanced figures
-;; 3. other movements: rotate, complete
+;; more advanced figures
+;; other movements: left, right, turn left, turn right, complete
+;; pass "speed" as the parameter for run; color scheme
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
 ;; domain name
