@@ -10,7 +10,7 @@
 
 ;; -- Logging
 (def ^:dynamic *logging*)
-(def LOG true)
+(def LOG false)
 (defn log [& objs]
   (when (and LOG *logging*)
     (println objs)))
@@ -114,13 +114,21 @@
   (let [{width :width height :height shape :shape} (:element state)
         bottom-coords (for [x (range width)]
                         {:x x
-                         :y (apply min (for [y (range height)
-                                             :when (= 1 (at shape x y))]
-                                         y))})]))
+                         :y (->> height
+                                 range
+                                 (filter (fn [y] (->> y (at shape x) (= 1))))
+                                 first)})]
+    bottom-coords))
+
+;; (->> height range (filter #(= 1 (at shape x %))) (take 1))
+;; todo false if for any bottom-coord the predicate is broken
+;; todo the predicate is: y != 0 && (x,y-1) is not 1 in the field
 
 
 
-(defn merge-if-needed [state] state)                        ;;todo if merged, drop one item in elements stream
+(defn merge-if-needed [state] state)
+;;todo if merged, drop one item in elements stream
+;;
 (defn game-over [state] state)
 (defn descend [state]
   (update state :y dec))
