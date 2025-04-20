@@ -107,13 +107,17 @@
   (get-rendered-references parameters))
 
 
-
 ;; -- Game logic
+(defn at [table x y]
+  (nth (nth table y) x))
 (defn can-descend [state]
-  (let [{width :width height :height shape :shape} (:element state)]
-    (for [x (range width)
-          y (range height)]
-      [:x x :y y])))
+  (let [{width :width height :height shape :shape} (:element state)
+        bottom-coords (for [x (range width)]
+                        {:x x
+                         :y (apply min (for [y (range height)
+                                             :when (= 1 (at shape x y))]
+                                         y))})]))
+
 
 
 (defn merge-if-needed [state] state)                        ;;todo if merged, drop one item in elements stream
@@ -322,6 +326,10 @@
 
 
 ;; 1. action handler for :descend
+;;  - finish can-descend
+;;  - merge-if-needed
+;;  - game-over
+;;  - put them together
 ;; 2. implement scene generator
 ;; 3. glue together to make game start, generate trivial block, merge it, generate new, lose
 ;;
