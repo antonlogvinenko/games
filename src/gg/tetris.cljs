@@ -47,17 +47,17 @@
 
 (def elements [{:height 1 :width 1 :shape [[1]]}])
 (defn random-element []
-  (-> elements count rand-int (partial nth elements)))
+  (->> elements count rand-int (nth elements)))
 (defn init-state [{height :height width :width} refs]
   {:stop    #()
    :height  height
    :width   width
    :refs    refs
    ;;left-bottom corner of the object
-   :x       -1
-   :y       -1
+   :x       (int (/ width 2))
+   :y       height
    :element (random-element)
-   :field   (repeat height (repeat width none))})
+   :field   (vec (repeat height (vec (repeat width none))))})
 
 
 ;; - Game UI
@@ -110,7 +110,7 @@
 (defn create-parameters [height width]
   {:height height :width width})
 
-(def default-parameters (create-parameters 25 14))
+(def default-parameters (create-parameters 10 14))
 (defn render-game! [parameters]
   (set-game-html
     (hiccups/html
@@ -120,19 +120,25 @@
 
 
 ;; -- Game logic
-(defn can-descend [{{width :width height :height shape :shape} :element
-                    field                                      :field}]
-  (let [can-not-descend-cell (fn [[x y]] (or (= y 0) (->> y dec (at field x) (= 1))))
-        bottom-coords (for [x (range width)]
-                        [x (->> height
-                                range
-                                (filter (fn [y] (->> y (at shape x) (= 1))))
-                                first)])]
+(defn can-descend [{x               :x
+                    y               :y
+                    {width  :width
+                     height :height
+                     shape  :shape} :element
+                    field           :field}]
+  (let [can-not-descend-cell (fn [[xi yi]] (or (= yi 0) (->> yi dec (at field xi) (= 1))))
+        bottom-coords (for [xe (range width)]
+                        [(+ x xe) (+ y (->> height
+                                            range
+                                            (filter (fn [ye] (->> ye (at shape xe) (= 1))))
+                                            first))])]
     (->> bottom-coords
          (filter can-not-descend-cell)
          empty?)))
 
-(defn add-element-to-field [{field           :field x :x y :y
+(defn add-element-to-field [{field           :field
+                             x               :x
+                             y               :y
                              {height :height
                               width  :width
                               shape  :shape} :element}]
@@ -147,12 +153,14 @@
         field))))
 
 ;; todo add test
-(defn merge-if-needed [state]
+(defn merge-if-needed [{width  :width
+                        height :height
+                        :as    state}]
   (if (can-descend state)
     state
-    (merge state {:field   (add-element-to-field state)
-                  :x       -1 :y -1
-                  :element (random-element)})))
+    (do (merge state {:field   (add-element-to-field state)
+                       :x       (/ width 2) :y height
+                       :element (random-element)}))))
 ;; todo add test
 (defn game-over [{stop :stop :as state}]
   (stop)
@@ -169,8 +177,13 @@
 (def handlers
   {:descend descend-handler})
 (defn action-handler [state msg]
-  (log "This is inside action handler" msg)
-  ((get handlers msg identity) state))
+  (log "This is inside action handler")
+  ;(->> state :field reverse (map (fn [r] (println r))) dorun)
+  (let [new-state ((get handlers msg identity) state)]
+    (println (:x new-state) (:y new-state))
+    (->> new-state :field reverse (map (fn [r] (println r))) dorun)
+    new-state))
+
 
 (defn render [last-displayed-state new-state]
   {})
@@ -193,7 +206,7 @@
   (go-loop [state state]
            (let [msg-in (<! inbox)]
              (binding [*logging* logging]
-               (log "[" id "]" "received a message" (subs (str msg-in) 0 20))
+               (log "[" id "]" "received a message" (subs (str msg-in) 0 100))
                (if (= msg-in :quit)
                  (log "Quitting" id)
                  (let [{msg-out :msg new-state :state} (fn {:state state :msg msg-in})]
@@ -267,12 +280,11 @@
   ((:stop @game)))
 (defn start! [parameters]
   (stop!)
-  (game-started-message)
   (let [refs (render-game! parameters)
         state (init-state parameters refs)
 
         timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 5000)
+        timed-ch (create-timed-ch timed-ch-ctrl 1000)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -281,6 +293,8 @@
         action-ch (default-ch)
         scene-ch (default-ch)
         chord-ch (default-ch)]
+
+    (game-started-message)
 
     (actor "renderer"
            false
@@ -299,7 +313,7 @@
               :state new-state-to-display}))
 
     (actor "scene generator"
-           true
+           false
            scene-ch
            renderer-calculator-ch
            {}
