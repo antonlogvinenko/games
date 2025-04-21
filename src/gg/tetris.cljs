@@ -122,16 +122,35 @@
          (filter can-not-descend-cell)
          empty?)))
 
+(defn add-element-to-field [{field           :field x :x y :y
+                             {height :height
+                              width  :width
+                              shape  :shape} :element}]
+  (let [blocks (for [ye (range height)
+                     xe (range width)
+                     :when (= 1 (at shape xe ye))]
+                 [(+ xe x) (+ ye y)])]
+    (loop [[[xb yb :as b] & bs] blocks
+           field field]
+      (if b
+        (recur bs (assoc-in field [yb xb] 1))
+        field))))
 
-(defn merge-if-needed [state] state)
-;;todo if merged, drop one item in elements stream
-(defn game-over [state] state)
+; (add-element-to-field {:x 1 :y :1   :element {:height 1 :width 1 :shape [[1]]}   :field [[0 0 0] [0 0 0] [0 0 0]]})
+
+(defn merge-if-needed [state]
+  (if (can-descend state)
+    state
+    (merge state {:field   (add-element-to-field state)
+                  :x       -1 :y -1
+                  :element (random-element)})))
+(defn game-over [state] state)                              ;;todo
 (defn descend [state]
   (update state :y dec))
-(defn descend-handler [state] state)
-;(if (-> state can-descend not)
-;  (game-over state)
-;  (-> state descend merge-if-needed))
+(defn descend-handler [state]
+  (if (can-descend state)
+    (-> state descend merge-if-needed)
+    (game-over state)))
 
 (def handlers
   {:descend descend-handler})
@@ -329,12 +348,11 @@
 
 
 ;; 1. action handler for :descend
-;;  - finish can-descend
 ;;  - merge-if-needed
 ;;  - game-over
 ;;  - put them together
 ;; 2. implement scene generator
-;; 3. glue together to make game start, generate trivial block, merge it, generate new, lose
+;; 3. glue together to make game start, generate trivial block, merge it, generate new, until game is over
 ;;
 ;; more advanced figures
 ;; other movements: left, right, turn left, turn right, complete

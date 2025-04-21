@@ -7,6 +7,40 @@
 ;https://cljs.github.io/api/cljs.test/
 ;https://figwheel.org/config-options
 
+(deftest add-element-to-the-field
+  (is (= [[0 0 0] [0 1 0] [0 1 1]]
+         (t/add-element-to-field {:x       1 :y 1
+                                  :element {:height 2 :width 2 :shape [[1 0] [1 1]]}
+                                  :field   [[0 0 0] [0 0 0] [0 0 0]]}))
+      "add big element to the field")
+
+  (is (= [[0 0 0] [0 1 0] [0 0 0]]
+         (t/add-element-to-field {:x       1 :y 1
+                                  :element {:height 1 :width 1 :shape [[1]]}
+                                  :field   [[0 0 0] [0 0 0] [0 0 0]]}))
+      "add small element to the field")
+
+  (is (= [[0 0 0] [0 0 0] [0 0 0]]
+         (t/add-element-to-field {:x       1 :y 1
+                                  :element {:height 0 :width 0 :shape []}
+                                  :field   [[0 0 0] [0 0 0] [0 0 0]]}))
+      "add nothing to the field")
+
+
+  (is (= [[1 0 0] [1 1 1] [0 0 1]]
+         (t/add-element-to-field {:x       0 :y 0
+                                  :element {:height 3 :width 3 :shape [[1 0 0] [1 1 1] [0 0 1]]}
+                                  :field   [[0 0 0] [0 0 0] [0 0 0]]}))
+      "add complex element to the field")
+
+  (is (= [[0 0 0 0] [0 1 0 0] [0 1 1 1] [0 0 0 1]]
+         (t/add-element-to-field {:x       1 :y 1
+                                  :element {:height 3 :width 3 :shape [[1 0 0] [1 1 1] [0 0 1]]}
+                                  :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "add complex element to the bigger field"))
+
+
+
 (deftest field-diff
   (is (empty?
         (t/field-diff [] []))
