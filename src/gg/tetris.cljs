@@ -10,7 +10,7 @@
 
 ;; -- Logging
 (def ^:dynamic *logging*)
-(def LOG false)
+(def LOG true)
 (defn log [& objs]
   (when (and LOG *logging*)
     (println objs)))
@@ -23,6 +23,8 @@
 (defn none? [cell] (== cell none))
 (defn filled? [cell] (== cell filled))
 (defrecord SetColor [x y color])
+(defn at [table x y]
+  (-> table (nth y) (nth x)))
 
 (def no-element nil)
 
@@ -47,7 +49,8 @@
 (defn random-element []
   (-> elements count rand-int (partial nth elements)))
 (defn init-state [{height :height width :width} refs]
-  {:height  height
+  {:stop    #()
+   :height  height
    :width   width
    :refs    refs
    ;;left-bottom corner of the object
@@ -89,9 +92,17 @@
 
 (defn set-color [refs x y color]
   (gdom/setProperties
-    (nth (nth refs y) x)
+    (at refs x y)
     #js {"style" (props {"background-color" color})}))
 
+(defn set-value [id value]
+  (gdom/setTextContent (gdom/getElement id) value))
+
+(defn game-started-message []
+  (set-value "game-message" "The game is on"))
+
+(defn game-over-message []
+  (set-value "game-message" "Game over"))
 
 (defn set-game-html [html-str]
   (set! (.-innerHTML game-container) html-str))
@@ -103,13 +114,12 @@
 (defn render-game! [parameters]
   (set-game-html
     (hiccups/html
+      [:div {:id "game-message"}]
       (render-game-table parameters)))
   (get-rendered-references parameters))
 
 
 ;; -- Game logic
-(defn at [table x y]
-  (nth (nth table y) x))
 (defn can-descend [{{width :width height :height shape :shape} :element
                     field                                      :field}]
   (let [can-not-descend-cell (fn [[x y]] (or (= y 0) (->> y dec (at field x) (= 1))))
@@ -136,17 +146,21 @@
         (recur bs (assoc-in field [yb xb] 1))
         field))))
 
-; (add-element-to-field {:x 1 :y :1   :element {:height 1 :width 1 :shape [[1]]}   :field [[0 0 0] [0 0 0] [0 0 0]]})
-
+;; todo add test
 (defn merge-if-needed [state]
   (if (can-descend state)
     state
     (merge state {:field   (add-element-to-field state)
                   :x       -1 :y -1
                   :element (random-element)})))
-(defn game-over [state] state)                              ;;todo
+;; todo add test
+(defn game-over [{stop :stop :as state}]
+  (stop)
+  (game-over-message))
+;; todo add test
 (defn descend [state]
   (update state :y dec))
+;; todo add test
 (defn descend-handler [state]
   (if (can-descend state)
     (-> state descend merge-if-needed)
@@ -252,6 +266,7 @@
   ((:stop @game)))
 (defn start! [parameters]
   (stop!)
+  (game-started-message)
   (let [refs (render-game! parameters)
         state (init-state parameters refs)
 
@@ -333,12 +348,11 @@
                    {:msg nil :state (filterv #(not= % key) modifiers)}
                    {:msg nil :state modifiers})))))
 
-    (reset! game {:state state
-                  :stop  (fn []
-                           (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch scene-ch
-                                 renderer-calculator-ch renderer-ch]
-                                (map (fn [ch] (put! ch :quit)))
-                                dorun))})
+    (reset! game (assoc state :stop (fn []
+                                      (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch scene-ch
+                                            renderer-calculator-ch renderer-ch]
+                                           (map (fn [ch] (put! ch :quit)))
+                                           dorun))))
     nil))
 
 
@@ -347,12 +361,8 @@
 
 
 
-;; 1. action handler for :descend
-;;  - merge-if-needed
-;;  - game-over
-;;  - put them together
-;; 2. implement scene generator
-;; 3. glue together to make game start, generate trivial block, merge it, generate new, until game is over
+;; 1. implement scene generator - reuse the merging function
+;; 2. glue together to make game start, generate trivial block, merge it, generate new, until game is over
 ;;
 ;; more advanced figures
 ;; other movements: left, right, turn left, turn right, complete
