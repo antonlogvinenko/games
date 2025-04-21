@@ -260,7 +260,8 @@
 ;;    renderer-inbox -> null-inbox
 ;;
 ;;
-(defn generate-scene [msg] {})
+(defn generate-scene [state]
+  (add-element-to-field state))
 (defonce game (atom {:stop #()}))
 (defn stop! []
   ((:stop @game)))
@@ -361,8 +362,7 @@
 
 
 
-;; 1. implement scene generator - reuse the merging function
-;; 2. glue together to make game start, generate trivial block, merge it, generate new, until game is over
+;; 1. glue together to make game start, generate trivial block, merge it, generate new, until game is over
 ;;
 ;; more advanced figures
 ;; other movements: left, right, turn left, turn right, complete
