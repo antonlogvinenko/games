@@ -97,7 +97,8 @@
 (defn set-color [refs x y color]
   (gdom/setProperties
     (at refs x y)
-    #js {"style" (props {"background-color" ({0 "white" 1 "black"} color)})}))
+    #js {"style" (props {"border" "1px solid black"
+                         "background-color" ({0 "white" 1 "black"} color)})}))
 
 (defn set-value [id value]
   (gdom/setTextContent (gdom/getElement id) value))
@@ -388,15 +389,15 @@
 
 
 
-;; 1. fix rendering of the grid (cells are erased)
+;; 1. all items
 ;; 2. actions: move left/right, rotate left/right, complete
-;; 3. all items
-;; 4. erasing filled horizontal blocks
-;; 5. speed as parameters
-;; 6. controls info
-;; 7. color schemes to choose
-;; 8. new game button
-;; 9. sounds
+;; 3. erasing filled horizontal blocks
+
+;; 4. speed as parameters
+;; 5. controls info
+;; 6. color schemes to choose
+;; 7. new game button
+;; 8. sounds
 
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
