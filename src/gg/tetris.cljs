@@ -77,10 +77,10 @@
                       ;:o])
                       ;:I])
                       ;:O])
-                      ;:T])
-                      ;:S])
-                      ;:Z])
-                      ;:J])
+                      ;:T
+                      ;:S
+                      ;:Z
+                      ;:J
                       :L])
 
 
@@ -151,7 +151,7 @@
 (defn create-parameters [height width]
   {:height height :width width})
 
-(def default-parameters (create-parameters 8 8))
+(def default-parameters (create-parameters 8 10))
 (defn render-game! [parameters]
   (set-game-html
     (hiccups/html
@@ -161,22 +161,25 @@
 
 
 ;; -- Game logic
-(defn can-descend [{x               :x
-                    y               :y
-                    {width  :width
-                     height :height
-                     shape  :shape} :element
-                    field           :field}]
-  (let [can-not-descend-cell (fn [[xi yi]] (or (= yi 0) (->> yi dec (at field xi) (= 1))))
-        bottom-coords (for [xe (range width)]
-                        [(+ x xe) (+ y (->> height
-                                            range
-                                            (filter (fn [ye] (->> ye (at shape xe) (= 1))))
-                                            first))])]
-    (log bottom-coords)
-    (->> bottom-coords
-         (filter can-not-descend-cell)
-         empty?)))
+(defn how-much-can-descend [{x               :x
+                             y               :y
+                             {width  :width
+                              height :height} :element
+                             field           :field}]
+  (let [wish-to-descend (if (= y (count field)) height 1)
+
+        x-range-start x
+        x-range-end (+ x width)
+        free-y-rows-for-x-range (->> field
+                                     (map-indexed vector)
+                                     (filter (fn [[_ y-row]] (->> (subvec y-row x-range-start x-range-end)
+                                                                  (apply +)
+                                                                  (= 0)))))
+        lowest-free-y-idx-for-x-range (if (empty? free-y-rows-for-x-range) nil (-> free-y-rows-for-x-range first first))
+        how-much-free-space (if (nil? lowest-free-y-idx-for-x-range) 0 (- y lowest-free-y-idx-for-x-range))]
+    (if (pos? how-much-free-space)
+      (min wish-to-descend how-much-free-space)
+      0)))
 
 (defn add-element-to-field [{field           :field
                              x               :x
@@ -199,7 +202,7 @@
 (defn merge-if-needed [{width  :width
                         height :height
                         :as    state}]
-  (if (can-descend state)
+  (if (pos? (how-much-can-descend state))
     state
     (do (merge state {:field   (add-element-to-field state)
                       :x       (/ width 2) :y height
@@ -210,13 +213,19 @@
   (game-over-message)
   state)
 ;; todo add test
-(defn descend [state]
-  (update state :y dec))
+(defn descend [distance {y               :y
+                         field           :field
+                         :as             state}]
+  (if (= y (count field))
+    (update state :y #(- % distance))
+    (update state :y dec)))
+
 ;; todo add test
 (defn descend-handler [state]
-  (if (can-descend state)
-    (-> state descend merge-if-needed)
-    (game-over state)))
+  (let [distance (how-much-can-descend state)]
+    (if (pos? distance)
+      (->> state (descend distance) merge-if-needed)
+      (game-over state))))
 
 (def handlers
   {:descend descend-handler})
@@ -326,7 +335,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 500)
+        timed-ch (create-timed-ch timed-ch-ctrl 1000)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -365,7 +374,7 @@
               :state new-state-to-display}))
 
     (actor "scene generator"
-           true
+           false
            scene-ch
            renderer-calculator-ch
            {}
@@ -374,7 +383,7 @@
                {:msg scene})))
 
     (actor "action handler"
-           false
+           true
            action-ch
            scene-ch
            state
@@ -429,10 +438,10 @@
 
 
 ;; 1. make all pieces work https://tetris.fandom.com/wiki/Tetromino
-    ;; - fix S and Z
-    ;; - check they randomly work together
-    ;; - show them in the actual middle
-    ;; - show full piece when it starts descending??
+;;     - ending of some pieces
+;; - check they randomly work together
+;; - show them in the actual middle
+;; - show full piece when it starts descending??
 ;;
 ;; 2. actions:
 ;    - move left/right = rewrite and reuse descend
