@@ -74,13 +74,13 @@
 
 
 (def tetromino-names [
-                      ;:o])
-                      ;:I])
-                      ;:O])
-                      ;:T
-                      ;:S
-                      ;:Z
-                      ;:J
+                      :o
+                      :I
+                      :O
+                      :T
+                      :S
+                      :Z
+                      :J
                       :L])
 
 
@@ -172,10 +172,11 @@
         x-range-end (+ x width)
         free-y-rows-for-x-range (->> field
                                      (map-indexed vector)
-                                     (filter (fn [[_ y-row]] (->> (subvec y-row x-range-start x-range-end)
-                                                                  (apply +)
-                                                                  (= 0)))))
-        lowest-free-y-idx-for-x-range (if (empty? free-y-rows-for-x-range) nil (-> free-y-rows-for-x-range first first))
+                                     reverse
+                                     (take-while (fn [[_ y-row]] (->> (subvec y-row x-range-start x-range-end)
+                                                                      (apply +)
+                                                                      (= 0)))))
+        lowest-free-y-idx-for-x-range (if (empty? free-y-rows-for-x-range) nil (-> free-y-rows-for-x-range last first))
         how-much-free-space (if (nil? lowest-free-y-idx-for-x-range) 0 (- y lowest-free-y-idx-for-x-range))]
     (if (pos? how-much-free-space)
       (min wish-to-descend how-much-free-space)
@@ -335,7 +336,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 1000)
+        timed-ch (create-timed-ch timed-ch-ctrl 300)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
