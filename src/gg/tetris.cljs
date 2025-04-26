@@ -26,6 +26,14 @@
 (defn at [table x y]
   (-> table (nth y) (nth x)))
 
+(defn at? [table x y]
+  (-> table (nth y []) (nth x nil) nil? not))
+
+(defn show-field [field]
+  (log "The scene is:")
+  (->> field reverse (map (fn [r] (log r))) dorun)
+  field)
+
 (def no-element nil)
 
 ;; State represents UI field in (x,y) coords
@@ -43,11 +51,41 @@
   (for [[y [row-a row-b]] (map-indexed vector (map vector state-a state-b))
         [x [a b]] (map-indexed vector (map vector row-a row-b))
         :when (not= a b)]
-    (SetColor. x y b)))
+    (do (show-field state-b)
+        (SetColor. x y b))))
 
-(def elements [{:height 1 :width 1 :shape [[1]]}])
+(def tetrominos {
+                 :o {:height 1 :width 1 :shape [[1]]}
+                 :I {:height 1 :width 4 :shape [[1 1 1 1]]}
+                 :O {:height 2 :width 2 :shape [[1 1]
+                                                [1 1]]}
+                 :T {:height 2 :width 3 :shape [[1 1 1]
+                                                [0 1 0]]}
+                 :S {:height 2 :width 3 :shape [[1 1 0]
+                                                [0 1 1]]}
+                 :Z {:height 2 :width 3 :shape [[0 1 1]
+                                                [1 1 0]]}
+                 :J {:height 3 :width 2 :shape [[1 1]
+                                                [0 1]
+                                                [0 1]]}
+                 :L {:height 3 :width 2 :shape [[1 1]
+                                                [1 0]
+                                                [1 0]]}})
+
+
+(def tetromino-names [
+                      ;:o])
+                      ;:I])
+                      ;:O])
+                      ;:T])
+                      ;:S])
+                      ;:Z])
+                      ;:J])
+                      :L])
+
+
 (defn random-element []
-  (->> elements count rand-int (nth elements)))
+  (->> tetromino-names count rand-int (nth tetromino-names) tetrominos))
 (defn init-state [{height :height width :width} refs]
   {:stop    #()
    :height  height
@@ -58,10 +96,7 @@
    :y       height
    :element (random-element)
    :field   (vec (repeat height (vec (repeat width none))))})
-(defn show-field [field]
-  (log "The scene is:")
-  (->> field reverse (map (fn [r] (log r))) dorun)
-  field)
+
 
 
 ;; - Game UI
@@ -97,7 +132,7 @@
 (defn set-color [refs x y color]
   (gdom/setProperties
     (at refs x y)
-    #js {"style" (props {"border" "1px solid black"
+    #js {"style" (props {"border"           "1px solid black"
                          "background-color" ({0 "white" 1 "black"} color)})}))
 
 (defn set-value [id value]
@@ -116,7 +151,7 @@
 (defn create-parameters [height width]
   {:height height :width width})
 
-(def default-parameters (create-parameters 10 14))
+(def default-parameters (create-parameters 8 8))
 (defn render-game! [parameters]
   (set-game-html
     (hiccups/html
@@ -138,6 +173,7 @@
                                             range
                                             (filter (fn [ye] (->> ye (at shape xe) (= 1))))
                                             first))])]
+    (log bottom-coords)
     (->> bottom-coords
          (filter can-not-descend-cell)
          empty?)))
@@ -151,8 +187,9 @@
   (let [blocks (for [ye (range height)
                      xe (range width)
                      :when (= 1 (at shape xe ye))]
-                 [(+ xe x) (+ ye y)])]
-    (loop [[[xb yb :as b] & bs] blocks
+                 [(+ xe x) (+ ye y)])
+        visible-blocks (filter (fn [[x y]] (at? field x y)) blocks)]
+    (loop [[[xb yb :as b] & bs] visible-blocks
            field field]
       (if b
         (recur bs (assoc-in field [yb xb] 1))
@@ -289,7 +326,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 1000)
+        timed-ch (create-timed-ch timed-ch-ctrl 500)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -310,11 +347,13 @@
     (game-started-message)
 
     (actor "renderer"
-           true
+           false
            renderer-ch
            null-inbox
            {}
-           (fn [{cmds :msg}] (dorun (for [{x :x y :y color :color} cmds] (set-color (:refs state) x y color)))))
+           (fn [{cmds :msg}] (dorun (for [{x :x y :y color :color} cmds]
+                                      (do (log "Setting color" x y color)
+                                          (set-color (:refs state) x y color))))))
 
     (actor "renderer calculator"
            false
@@ -326,7 +365,7 @@
               :state new-state-to-display}))
 
     (actor "scene generator"
-           false
+           true
            scene-ch
            renderer-calculator-ch
            {}
@@ -389,10 +428,17 @@
 
 
 
-;; 1. all items
-;; 2. actions: move left/right, rotate left/right, complete
-;; 3. erasing filled horizontal blocks
-
+;; 1. make all pieces work https://tetris.fandom.com/wiki/Tetromino
+    ;; - fix S and Z
+    ;; - check they randomly work together
+    ;; - show them in the actual middle
+    ;; - show full piece when it starts descending??
+;;
+;; 2. actions:
+;    - move left/right = rewrite and reuse descend
+;    - item with new coords doesn't hit fields blocks and edges
+;; - rotate left/right, complete
+;; 3. erasing up horizontal blocks
 ;; 4. speed as parameters
 ;; 5. controls info
 ;; 6. color schemes to choose
@@ -405,7 +451,7 @@
 ;; use the domain name
 ;; robots.txt
 ;; seo
-;;
+;; check how much traffic
 ;;
 ;;
 ;;
