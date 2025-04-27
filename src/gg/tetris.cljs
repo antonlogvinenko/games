@@ -212,8 +212,6 @@
 
         free (map + free-outside free-inside)
         how-much-free-space (apply min free)]
-
-    (println "how-much-free-space" how-much-free-space)
     (if (pos? how-much-free-space)
       (min wish-to-descend how-much-free-space)
       0)))
@@ -239,12 +237,12 @@
 (defn merge-if-needed [{width  :width
                         height :height
                         :as    state}]
-  (let [{{elem-width :width} :element
-         :as                 next-element} (random-element)]
+  (let [{elem-width :width :as next-element} (random-element)]
     (if (pos? (how-much-can-descend state))
       state
       (do (merge state {:field   (add-element-to-field state)
-                        :x       (element-start-x width elem-width) :y height
+                        :x       (element-start-x width elem-width)
+                        :y       height
                         :element next-element})))))
 ;; todo add test
 (defn game-over [{stop :stop :as state}]
@@ -422,7 +420,7 @@
                {:msg scene})))
 
     (actor "action handler"
-           true
+           false
            action-ch
            scene-ch
            state
@@ -477,9 +475,6 @@
 
 
 ;; - make all pieces work
-;;   - bug with S and Z
-;;   - check they randomly work together
-;;   - starts with another element's location
 ;;   - simplify
 ;;
 ;;
