@@ -171,64 +171,43 @@
 
 
 ;; -- Game logic
-;;
-;; [0 0 0 0 0]
-;; [0 1 0 0 0]
-;; [0 1 1 1 0]
-;; [0 1 0 1 0]
-;; x = 1
-;; width = 3
-;; output: [[1 3] [2 2] [3 2]]
-;;
-;; [0 [0 0 0 0 0]]
-;; [1 [0 1 0 0 0]]
-;; [2 [0 1 1 1 0]]
-;; [3 [0 1 0 1 0]]
-;;
-;; accum:
-;; [
-;; {:x-index 1 :finished false :value 4}
-;; {:x-index 2 :finished false :value 4}
-;; {:x-index 3 :finished false :value 4}
-;; ]
-(defn find-top-heights [x-start x-end matrix]
-  (let [field-height (count matrix)]
-    (->> matrix
-         indexed
-         reverse
-         (reduce
-           (fn [accum [y-idx row]]
-             (for [{x-idx :x-index finished :finished :as accum-x} accum]
-               (cond
-                 finished accum-x
-                 (= 0 (nth row x-idx)) (assoc accum-x :value y-idx)
-                 :else (assoc accum-x :finished true))))
-           (map (fn [idx] {:x-index idx :finished false :value field-height})
-                (range x-start x-end)))
-         (map :value))))
+(defn is-acceptable [{x                    :x
+                      y                    :y
+                      field-height         :height
+                      field-width          :width
+                      {elem-width  :width
+                       elem-height :height
+                       shape       :shape} :element
+                      field                :field}]
+  (let [good-cells (for [xi (range 0 elem-width)
+                         :let [xg (+ xi x)]
+                         yi (range 0 elem-height)
+                         :let [yg (+ yi y)]
+                         :when (< yg field-height)]
+                     (->> [#(and (>= xg 0) (< xg field-width))
+                           #(>= yg 0)
+                           #(or (= 0 (at shape xi yi))
+                                (= 0 (at field xg yg)))]
+                          (map apply)
+                          (filter false?)
+                          empty?))]
+    (->> good-cells (filter false?) empty?)))
 
 
-
-(defn how-much-can-descend [{x                    :x
-                             y                    :y
-                             field-height         :height
-                             {elem-width  :width
-                              elem-height :height
-                              shape       :shape} :element
-                             field                :field}]
+(defn how-much-can-descend [{y                     :y
+                             field-height          :height
+                             {elem-height :height} :element
+                             :as                   state}]
   (let [wish-to-descend (if (= y field-height) elem-height 1)
-
-        heights-outside (find-top-heights x (+ x elem-width) field)
-        heights-inside (find-top-heights 0 elem-width (reverse shape))
-
-        free-outside (map #(- y %) heights-outside)
-        free-inside (map #(- elem-height %) heights-inside)
-
-        free (map + free-outside free-inside)
-        how-much-free-space (apply min free)]
-    (if (pos? how-much-free-space)
-      (min wish-to-descend how-much-free-space)
-      0)))
+        acceptable-states (->> wish-to-descend
+                               (range 0)
+                               (map inc)
+                               (map (fn [d] [d (update state :y #(- % d))]))
+                               (filter (fn [[d st]] (is-acceptable st))))]
+    (println "acceptable-states" (count acceptable-states))
+    (if (empty? acceptable-states)
+      0
+      (-> acceptable-states last (nth 0)))))
 
 (defn add-element-to-field [{field           :field
                              x               :x
@@ -484,7 +463,6 @@
 
 
 (start! default-parameters)
-
 
 
 
