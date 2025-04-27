@@ -54,6 +54,7 @@
     (do (show-field state-b)
         (SetColor. x y b))))
 
+;; https://tetris.fandom.com/wiki/Tetromino
 (def tetrominos {
                  :o {:height 1 :width 1 :shape [[1]]}
                  :I {:height 1 :width 4 :shape [[1 1 1 1]]}
@@ -83,19 +84,22 @@
                       :J
                       :L])
 
+(defn element-start-x [field-width element-width]
+  (- (int (/ field-width 2)) (int (/ element-width 2))))
 
 (defn random-element []
   (->> tetromino-names count rand-int (nth tetromino-names) tetrominos))
 (defn init-state [{height :height width :width} refs]
-  {:stop    #()
-   :height  height
-   :width   width
-   :refs    refs
-   ;;left-bottom corner of the object
-   :x       (int (/ width 2))
-   :y       height
-   :element (random-element)
-   :field   (vec (repeat height (vec (repeat width none))))})
+  (let [{elem-width :width :as element} (random-element)]
+    {:stop    #()
+     :height  height
+     :width   width
+     :refs    refs
+     ;;left-bottom corner of the object
+     :x       (element-start-x width elem-width)
+     :y       height
+     :element element
+     :field   (vec (repeat height (vec (repeat width none))))}))
 
 
 
@@ -151,7 +155,7 @@
 (defn create-parameters [height width]
   {:height height :width width})
 
-(def default-parameters (create-parameters 8 10))
+(def default-parameters (create-parameters 20 12))
 (defn render-game! [parameters]
   (set-game-html
     (hiccups/html
@@ -161,11 +165,11 @@
 
 
 ;; -- Game logic
-(defn how-much-can-descend [{x               :x
-                             y               :y
+(defn how-much-can-descend [{x                :x
+                             y                :y
                              {width  :width
                               height :height} :element
-                             field           :field}]
+                             field            :field}]
   (let [wish-to-descend (if (= y (count field)) height 1)
 
         x-range-start x
@@ -200,13 +204,14 @@
         field))))
 
 ;; todo add test
-(defn merge-if-needed [{width  :width
-                        height :height
-                        :as    state}]
+(defn merge-if-needed [{width               :width
+                        height              :height
+                        {elem-width :width} :element
+                        :as                 state}]
   (if (pos? (how-much-can-descend state))
     state
     (do (merge state {:field   (add-element-to-field state)
-                      :x       (/ width 2) :y height
+                      :x       (element-start-x width elem-width) :y height
                       :element (random-element)}))))
 ;; todo add test
 (defn game-over [{stop :stop :as state}]
@@ -214,9 +219,9 @@
   (game-over-message)
   state)
 ;; todo add test
-(defn descend [distance {y               :y
-                         field           :field
-                         :as             state}]
+(defn descend [distance {y     :y
+                         field :field
+                         :as   state}]
   (if (= y (count field))
     (update state :y #(- % distance))
     (update state :y dec)))
@@ -336,7 +341,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 300)
+        timed-ch (create-timed-ch timed-ch-ctrl 200)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -438,22 +443,25 @@
 
 
 
-;; 1. make all pieces work https://tetris.fandom.com/wiki/Tetromino
-;;     - ending of some pieces
-;; - check they randomly work together
-;; - show them in the actual middle
-;; - show full piece when it starts descending??
+;; - make all pieces work
+;;   - bug with S and Z
+;;   - check they randomly work together
+;;   - simplify
 ;;
-;; 2. actions:
-;    - move left/right = rewrite and reuse descend
+;;
+;; - actions:
+;    - move left/right and reuse descend
 ;    - item with new coords doesn't hit fields blocks and edges
 ;; - rotate left/right, complete
-;; 3. erasing up horizontal blocks
-;; 4. speed as parameters
-;; 5. controls info
-;; 6. color schemes to choose
-;; 7. new game button
-;; 8. sounds
+;;
+;; - proper test coverage, refactor, simplify
+;;
+;; -  erasing up horizontal blocks
+;; -  speed as parameters
+;; -  controls info
+;; -  color schemes to choose
+;; -  new game button
+;; -  sounds
 
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
