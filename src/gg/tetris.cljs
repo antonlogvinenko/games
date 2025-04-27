@@ -164,24 +164,56 @@
   (get-rendered-references parameters))
 
 
+
 ;; -- Game logic
-(defn how-much-can-descend [{x                :x
-                             y                :y
+;;
+;; [0 0 0 0 0]
+;; [0 1 0 0 0]
+;; [0 1 1 1 0]
+;; [0 1 0 1 0]
+;; x = 1
+;; width = 3
+;; output: [[1 3] [2 2] [3 2]]
+(defn find-top-heights [element-x element-width field]
+  (let [x-range-start element-x
+        x-range-end (+ element-x element-width)]
+    (->> field
+         (map-indexed vector)
+         reverse
+         (reduce
+           (fn [accum [y-idx row]]
+             (map (fn [[x-idx {is-done :finished last-value :value} :as done]]
+                    (if is-done
+                      done
+                      (if (= 0 (nth row x-idx))
+                        [x-idx {:finished false :value y-idx}]
+                        [x-idx {:finished true :value last-value}])))
+                  accum))
+           (map vector
+                (range x-range-start x-range-end)
+                (repeat element-width {:finished false :value (count field)})))
+         (map (fn [[_ {value :value}]] value)))))
+
+
+
+(defn how-much-can-descend [{x               :x
+                             y               :y
                              {width  :width
-                              height :height} :element
-                             field            :field}]
+                              height :height
+                              shape  :shape} :element
+                             field           :field}]
   (let [wish-to-descend (if (= y (count field)) height 1)
 
-        x-range-start x
-        x-range-end (+ x width)
-        free-y-rows-for-x-range (->> field
-                                     (map-indexed vector)
-                                     reverse
-                                     (take-while (fn [[_ y-row]] (->> (subvec y-row x-range-start x-range-end)
-                                                                      (apply +)
-                                                                      (= 0)))))
-        lowest-free-y-idx-for-x-range (if (empty? free-y-rows-for-x-range) nil (-> free-y-rows-for-x-range last first))
-        how-much-free-space (if (nil? lowest-free-y-idx-for-x-range) 0 (- y lowest-free-y-idx-for-x-range))]
+        heights-outside (find-top-heights x width field)
+        heights-inside (find-top-heights 0 width (reverse shape))
+
+        free-outside (map #(- y %) heights-outside)
+        free-inside (map #(- (count shape) %) heights-inside)
+
+        free (map + free-outside free-inside)
+        how-much-free-space (apply min free)]
+
+    (println "how-much-free-space" how-much-free-space)
     (if (pos? how-much-free-space)
       (min wish-to-descend how-much-free-space)
       0)))
@@ -204,15 +236,16 @@
         field))))
 
 ;; todo add test
-(defn merge-if-needed [{width               :width
-                        height              :height
-                        {elem-width :width} :element
-                        :as                 state}]
-  (if (pos? (how-much-can-descend state))
-    state
-    (do (merge state {:field   (add-element-to-field state)
-                      :x       (element-start-x width elem-width) :y height
-                      :element (random-element)}))))
+(defn merge-if-needed [{width  :width
+                        height :height
+                        :as    state}]
+  (let [{{elem-width :width} :element
+         :as                 next-element} (random-element)]
+    (if (pos? (how-much-can-descend state))
+      state
+      (do (merge state {:field   (add-element-to-field state)
+                        :x       (element-start-x width elem-width) :y height
+                        :element next-element})))))
 ;; todo add test
 (defn game-over [{stop :stop :as state}]
   (stop)
@@ -341,7 +374,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 200)
+        timed-ch (create-timed-ch timed-ch-ctrl 100)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -446,6 +479,7 @@
 ;; - make all pieces work
 ;;   - bug with S and Z
 ;;   - check they randomly work together
+;;   - starts with another element's location
 ;;   - simplify
 ;;
 ;;
