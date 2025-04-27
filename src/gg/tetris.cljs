@@ -47,9 +47,15 @@
 ;; 0 1 2
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
+;;
+(defn indexed [coll]
+  (map-indexed vector coll))
+(defn zip [coll-a coll-b]
+  (map vector coll-a coll-b))
+
 (defn field-diff [state-a state-b]
-  (for [[y [row-a row-b]] (map-indexed vector (map vector state-a state-b))
-        [x [a b]] (map-indexed vector (map vector row-a row-b))
+  (for [[y [row-a row-b]] (indexed (zip state-a state-b))
+        [x [a b]] (indexed (zip row-a row-b))
         :when (not= a b)]
     (do (show-field state-b)
         (SetColor. x y b))))
@@ -95,7 +101,6 @@
      :height  height
      :width   width
      :refs    refs
-     ;;left-bottom corner of the object
      :x       (element-start-x width elem-width)
      :y       height
      :element element
@@ -174,41 +179,50 @@
 ;; x = 1
 ;; width = 3
 ;; output: [[1 3] [2 2] [3 2]]
-(defn find-top-heights [element-x element-width field]
-  (let [x-range-start element-x
-        x-range-end (+ element-x element-width)]
-    (->> field
-         (map-indexed vector)
+;;
+;; [0 [0 0 0 0 0]]
+;; [1 [0 1 0 0 0]]
+;; [2 [0 1 1 1 0]]
+;; [3 [0 1 0 1 0]]
+;;
+;; accum:
+;; [
+;; {:x-index 1 :finished false :value 4}
+;; {:x-index 2 :finished false :value 4}
+;; {:x-index 3 :finished false :value 4}
+;; ]
+(defn find-top-heights [x-start x-end matrix]
+  (let [field-height (count matrix)]
+    (->> matrix
+         indexed
          reverse
          (reduce
            (fn [accum [y-idx row]]
-             (map (fn [[x-idx {is-done :finished last-value :value} :as done]]
-                    (if is-done
-                      done
-                      (if (= 0 (nth row x-idx))
-                        [x-idx {:finished false :value y-idx}]
-                        [x-idx {:finished true :value last-value}])))
-                  accum))
-           (map vector
-                (range x-range-start x-range-end)
-                (repeat element-width {:finished false :value (count field)})))
-         (map (fn [[_ {value :value}]] value)))))
+             (for [{x-idx :x-index finished :finished :as accum-x} accum]
+               (cond
+                 finished accum-x
+                 (= 0 (nth row x-idx)) (assoc accum-x :value y-idx)
+                 :else (assoc accum-x :finished true))))
+           (map (fn [idx] {:x-index idx :finished false :value field-height})
+                (range x-start x-end)))
+         (map :value))))
 
 
 
-(defn how-much-can-descend [{x               :x
-                             y               :y
-                             {width  :width
-                              height :height
-                              shape  :shape} :element
-                             field           :field}]
-  (let [wish-to-descend (if (= y (count field)) height 1)
+(defn how-much-can-descend [{x                    :x
+                             y                    :y
+                             field-height         :height
+                             {elem-width  :width
+                              elem-height :height
+                              shape       :shape} :element
+                             field                :field}]
+  (let [wish-to-descend (if (= y field-height) elem-height 1)
 
-        heights-outside (find-top-heights x width field)
-        heights-inside (find-top-heights 0 width (reverse shape))
+        heights-outside (find-top-heights x (+ x elem-width) field)
+        heights-inside (find-top-heights 0 elem-width (reverse shape))
 
         free-outside (map #(- y %) heights-outside)
-        free-inside (map #(- (count shape) %) heights-inside)
+        free-inside (map #(- elem-height %) heights-inside)
 
         free (map + free-outside free-inside)
         how-much-free-space (apply min free)]
@@ -250,10 +264,10 @@
   (game-over-message)
   state)
 ;; todo add test
-(defn descend [distance {y     :y
-                         field :field
-                         :as   state}]
-  (if (= y (count field))
+(defn descend [distance {y      :y
+                         height :height
+                         :as    state}]
+  (if (= y height)
     (update state :y #(- % distance))
     (update state :y dec)))
 
@@ -474,10 +488,6 @@
 
 
 
-;; - make all pieces work
-;;   - simplify
-;;
-;;
 ;; - actions:
 ;    - move left/right and reuse descend
 ;    - item with new coords doesn't hit fields blocks and edges
