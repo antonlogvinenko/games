@@ -204,7 +204,6 @@
                                (map inc)
                                (map (fn [d] [d (update state :y #(- % d))]))
                                (filter (fn [[d st]] (is-acceptable st))))]
-    (println "acceptable-states" (count acceptable-states))
     (if (empty? acceptable-states)
       0
       (-> acceptable-states last (nth 0)))))
@@ -257,8 +256,21 @@
       (->> state (descend distance) merge-if-needed)
       (game-over state))))
 
+(defn move [current-state new-state]
+  (if (is-acceptable new-state)
+    new-state
+    current-state))
+
+(defn move-left [state]
+  (move state (update state :x dec)))
+
+(defn move-right [state]
+  (move state (update state :x inc)))
+
 (def handlers
-  {:descend descend-handler})
+  {::descend    descend-handler
+   ::move-left  move-left
+   ::move-right move-right})
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
     (log "New coords" (:x new-state) (:y new-state))
@@ -365,7 +377,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 100)
+        timed-ch (create-timed-ch timed-ch-ctrl 1000)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -426,7 +438,7 @@
            timed-ch
            action-ch
            {}
-           (fn [{msg :msg}] {:msg :descend}))
+           (fn [{msg :msg}] {:msg ::descend}))
 
     (actor "kbd interpreter"
            false
@@ -467,19 +479,21 @@
 
 
 ;; - actions:
-;    - move left/right and reuse descend
-;    - item with new coords doesn't hit fields blocks and edges
-;; - rotate left/right, complete
+;    - rotate left/right
+;    - complete
+;;
 ;;
 ;; - proper test coverage, refactor, simplify
 ;;
-;; -  erasing up horizontal blocks
+;; -  cleaning the line
+;; -  must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
 ;; -  speed as parameters
 ;; -  controls info
 ;; -  color schemes to choose
 ;; -  new game button
 ;; -  sounds
 
+;; - check https://www.goodoldtetris.com
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
 ;; domain name
