@@ -199,14 +199,15 @@
                              {elem-height :height} :element
                              :as                   state}]
   (let [wish-to-descend (if (= y field-height) elem-height 1)
+        ;; 0 is current state, ordered last, always acceptable, used when others aren't
         acceptable-states (->> wish-to-descend
+                               inc
                                (range 0)
-                               (map inc)
-                               (map (fn [d] [d (update state :y #(- % d))]))
-                               (filter (fn [[d st]] (is-acceptable st))))]
-    (if (empty? acceptable-states)
-      0
-      (-> acceptable-states last (nth 0)))))
+                               reverse
+                               (map (fn [d] [d (assoc state :y (- y d))]))
+                               (filter (comp is-acceptable second))
+                               (map first))]
+    (first acceptable-states)))
 
 (defn add-element-to-field [{field           :field
                              x               :x
@@ -377,7 +378,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 1000)
+        timed-ch (create-timed-ch timed-ch-ctrl 200)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -493,6 +494,7 @@
 ;; - color schemes to choose
 ;; - new game button
 ;; - sounds
+;; - hardware looking design
 ;; - description
 ;; - statistics
 
