@@ -482,16 +482,19 @@
 ;    - rotate left/right
 ;    - complete
 ;;
-;;
 ;; - proper test coverage, refactor, simplify
 ;;
-;; -  cleaning the line
-;; -  must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
-;; -  speed as parameters
-;; -  controls info
-;; -  color schemes to choose
-;; -  new game button
-;; -  sounds
+;; - cleaning the line
+;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
+;; - speed as parameters
+;; - show next item
+;; - switching levels?
+;; - controls info
+;; - color schemes to choose
+;; - new game button
+;; - sounds
+;; - description
+;; - statistics
 
 ;; - check https://www.goodoldtetris.com
 ;;
