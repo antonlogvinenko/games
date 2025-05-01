@@ -32,6 +32,9 @@
   (is (== [[1 'a'] [2 'b'] [3 'c']] (t/zip [1 2 3] ['a' 'b' 'c' 'd'])) "non empty zip")
   (is (== [[1 'a'] [2 'b'] [3 'c']] (t/zip [1 2 3 4] ['a' 'b' 'c'])) "non empty zip"))
 
+(deftest element-start-x-test
+  (is (= 4 (t/element-start-x 10 3))))
+
 (deftest add-element-to-the-field
   (is (= [[0 0 0] [0 1 0] [0 1 1]]
          (t/add-element-to-field {:x       1 :y 1
@@ -65,6 +68,13 @@
       "add complex element to the bigger field"))
 
 
+(deftest props-test
+  (is (== "a:1; b:2" (t/props {"a" 1 "b" 2})))
+  (is (== "a:1" (t/props {"a" 1})))
+  (is (== "" (t/props {}))))
+
+(deftest cell-id-test
+  (is (== "cell:1:2" (t/cell-id 1 2))))
 
 (deftest field-diff
   (is (empty?
@@ -76,7 +86,7 @@
       "empty result")
 
   (is (=
-        [(t/SetColor. 1 1 0) (t/SetColor. 2 2 1)]
+        [(t/FieldDiff. 1 1 0) (t/FieldDiff. 2 2 1)]
         (t/field-diff [[0 0 0] [0 1 0] [0 0 0]] [[0 0 0] [0 0 0] [0 0 1]]))
       "non empty result"))
 

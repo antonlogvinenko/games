@@ -16,27 +16,19 @@
     (println objs)))
 
 
-
 ;; -- Game state
 (def none 0)
 (def filled 1)
 (defn none? [cell] (== cell none))
 (defn filled? [cell] (== cell filled))
-(defrecord SetColor [x y color])
-(defn at
-  "Get table element at (x, y)"
-  [table x y]
+(defrecord FieldDiff [x y color])
+(defn at [table x y]
   (-> table (nth y) (nth x)))
 
-(defn at?
-  "Does (x, y) coordinate belong to the table?"
-  [table x y]
+(defn at? [table x y]
   (-> table (nth y []) (nth x nil) nil? not))
 
-(defn show-field
-  "Print the field so that rows with the lowest index
-  are at the bottom which requires a reverse"
-  [field]
+(defn show-field [field]
   (log "The scene is:")
   (->> field reverse (map (fn [r] (log r))) dorun)
   field)
@@ -53,25 +45,18 @@
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
 
-(defn indexed
-  "Add indices to the collection
-  (indexed [10 11 12]) -> [[0 10] [1 11] [2 12]]"
-  [coll]
+(defn indexed [coll]
   (map-indexed vector coll))
 
-(defn zip
-  "Zip two collections together
-  (zip [1 2 3] ['a' 'b' 'c']) -> [[1 'a'] [2 'b'] [3 'c']]"
-  [coll-a coll-b]
+(defn zip [coll-a coll-b]
   (map vector coll-a coll-b))
 
-; todo test
-(defn field-diff [state-a state-b]
-  (for [[y [row-a row-b]] (indexed (zip state-a state-b))
+(defn field-diff [field-a field-b]
+  (for [[y [row-a row-b]] (indexed (zip field-a field-b))
         [x [a b]] (indexed (zip row-a row-b))
         :when (not= a b)]
-    (do (show-field state-b)
-        (SetColor. x y b))))
+    (do (show-field field-b)
+        (FieldDiff. x y b))))
 
 ;; https://tetris.fandom.com/wiki/Tetromino
 (def tetrominos {
@@ -102,13 +87,13 @@
                       :Z
                       :J
                       :L])
-; todo test
+
 (defn element-start-x [field-width element-width]
   (- (int (/ field-width 2)) (int (/ element-width 2))))
 
 (defn random-element []
   (->> tetromino-names count rand-int (nth tetromino-names) tetrominos))
-(defn init-state [{height :height width :width} refs]
+(defn init-state [{height :height width :width ticking :ticking} refs]
   (let [{elem-width :width :as element} (random-element)]
     {:stop    #()
      :height  height
@@ -117,6 +102,7 @@
      :x       (element-start-x width elem-width)
      :y       height
      :element element
+     :ticking ticking
      :field   (vec (repeat height (vec (repeat width none))))}))
 
 
@@ -125,15 +111,12 @@
 (def game-container (gdom/getElement "app"))
 
 ; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
-; todo test
-(defn props [m]
-  (->> m
+(defn props [a-map]
+  (->> a-map
        (map (fn [[k v]] (str k ":" v)))
        (str/join "; ")))
-; todo test
 (defn cell-id [y x]
   (str "cell:" y ":" x))
-; todo test
 (defn render-game-table [{height :height width :width}]
   (let [square-px 30
         sizer (fn [items] (str (* items square-px) "px"))
@@ -147,42 +130,42 @@
                                         (range width))))]
     [:div (into [:table {:style table-style}]
                 (map create-row (reverse (range height))))]))
-; todo test
-(defn get-rendered-references [{height :height width :width}]
+
+(defn get-rendered-references! [{height :height width :width}]
   (for [y (range height)]
     (for [x (range width)]
       (gdom/getElement (cell-id y x)))))
 
 
-(defn set-color [refs x y color]
+(defn set-color! [refs x y color]
   (gdom/setProperties
     (at refs x y)
     #js {"style" (props {"border"           "1px solid black"
                          "background-color" ({0 "white" 1 "black"} color)})}))
 
-(defn set-value [id value]
+(defn set-value! [id value]
   (gdom/setTextContent (gdom/getElement id) value))
 
-(defn game-started-message []
-  (set-value "game-message" "The game is on"))
+(defn game-started-message! []
+  (set-value! "game-message" "The game is on"))
 
-(defn game-over-message []
+(defn game-over-message! []
   (log "GAME OVER")
-  (set-value "game-message" "Game over"))
+  (set-value! "game-message" "Game over"))
 
-(defn set-game-html [html-str]
+(defn set-game-html! [html-str]
   (set! (.-innerHTML game-container) html-str))
 
-(defn create-parameters [height width]
-  {:height height :width width})
+(defn create-parameters [height width ticking]
+  {:height height :width width :ticking ticking})
 
-(def default-parameters (create-parameters 20 12))
+(def default-parameters (create-parameters 20 12 500))
 (defn render-game! [parameters]
-  (set-game-html
+  (set-game-html!
     (hiccups/html
       [:div {:id "game-message"}]
       (render-game-table parameters)))
-  (get-rendered-references parameters))
+  (get-rendered-references! parameters))
 
 
 
@@ -211,20 +194,15 @@
     (->> good-cells (filter false?) empty?)))
 
 ; todo test
-(defn how-much-can-descend [wish-to {y                     :y
-                                     field-height          :height
-                                     {elem-height :height} :element
-                                     :as                   state}]
-  (let [wish-to-descend (if wish-to wish-to (if (= y field-height) elem-height 1))
-        ;; 0 is current state, ordered last, always acceptable, used when others aren't
-        acceptable-states (->> wish-to-descend
-                               inc
-                               (range 0)
-                               reverse
-                               (map (fn [d] [d (assoc state :y (- y d))]))
-                               (filter (comp is-acceptable second))
-                               (map first))]
-    (first acceptable-states)))
+(defn how-much-can-descend [wish-to state]
+  (->> wish-to
+       inc
+       (range 0)
+       reverse
+       (map (fn [d] [d (update state :y #(- % d))]))
+       (filter (comp is-acceptable second))
+       (map first)
+       first))
 
 ; todo test
 (defn add-element-to-field [{field           :field
@@ -258,7 +236,7 @@
 ;; todo add test
 (defn game-over [{stop :stop :as state}]
   (stop)
-  (game-over-message)
+  (game-over-message!)
   state)
 ;; todo add test
 (defn descend [distance state]
@@ -268,7 +246,7 @@
 (defn descend-handler [{y                     :y
                         field-height          :height
                         {elem-height :height} :element
-                        :as state}]
+                        :as                   state}]
   (let [wish-to-descend (if (= y field-height) elem-height 1)
         distance (how-much-can-descend wish-to-descend state)]
     (if (pos? distance)
@@ -278,8 +256,6 @@
 ; todo test
 ; Cake is a lie
 (defn change-state
-  "Choose the new state if it is acceptable.
-  Otherwise, choose the current state."
   [current-state new-state]
   (if (is-acceptable new-state)
     new-state
@@ -335,11 +311,6 @@
   (let [new-state ((get handlers msg identity) state)]
     (log "New coords" (:x new-state) (:y new-state))
     new-state))
-
-; todo test
-(defn render [last-displayed-state new-state]
-  (show-field new-state)
-  (field-diff last-displayed-state new-state))
 
 (defn listen [down-listener up-listener]
   (gevents/listen js/document "keydown" down-listener)
@@ -470,7 +441,7 @@
                                         (map (fn [ch] (put! ch :quit)))
                                         dorun)))]
 
-    (game-started-message)
+    (game-started-message!)
 
     (actor "renderer"
            false
@@ -479,7 +450,7 @@
            {}
            (fn [{cmds :msg}] (dorun (for [{x :x y :y color :color} cmds]
                                       (do (log "Setting color" x y color)
-                                          (set-color (:refs state) x y color))))))
+                                          (set-color! (:refs state) x y color))))))
 
     (actor "renderer calculator"
            false
@@ -487,7 +458,7 @@
            renderer-ch
            (:field state)
            (fn [{last-displayed-state :state new-state-to-display :msg}]
-             {:msg   (render last-displayed-state new-state-to-display)
+             {:msg   (field-diff last-displayed-state new-state-to-display)
               :state new-state-to-display}))
 
     (actor "scene generator"
