@@ -81,7 +81,7 @@
 
 
 (def tetromino-names [
-                      :o
+                      ;:o
                       :I
                       :O
                       :T
@@ -268,10 +268,33 @@
 (defn move-right [state]
   (change-state state (update state :x inc)))
 
+(defn rotate-matrix-left [matrix]
+  (apply map (comp reverse list) matrix))
+
+(defn rotate-matrix-right [matrix]
+  (reverse (apply map list matrix)))
+
+(defn rotate [rotate-fn {{width  :width
+                          height :height
+                          shape  :shape} :element :as state}]
+  (change-state state (assoc state :element {:height width :width height :shape (vec (map vec (rotate-fn shape)))})))
+
+(defn rotate-right [state]
+  (rotate rotate-matrix-right state))
+
+
+(defn rotate-left [state]
+  (rotate rotate-matrix-left state))
+
+
+
+
 (def handlers
   {::descend    descend-handler
    ::move-left  move-left
-   ::move-right move-right})
+   ::move-right move-right
+   ::rotate-right rotate-right
+   ::rotate-left  rotate-left})
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
     (log "New coords" (:x new-state) (:y new-state))
@@ -324,6 +347,21 @@
 (derive ::move-right ::action)
 (derive ::rotate-left ::action)
 (derive ::rotate-right ::action)
+
+
+; row to column conversion:
+;  [1 0]
+;  [1 0]
+;  [1 1]
+;
+; 1. top to bottom, straight indices -> turn left
+; 0 0 1
+; 1 1 1
+; 
+; 2. bottom to top, inverted indices -> turn right
+; 1 1 1
+; 1 0 0
+
 
 (defn interpret-kbd-input [input]
   (let [key-commands {[[] "w"]              ::rotate-right
@@ -378,7 +416,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 200)
+        timed-ch (create-timed-ch timed-ch-ctrl 500)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
