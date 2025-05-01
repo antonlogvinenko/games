@@ -257,16 +257,16 @@
       (->> state (descend distance) merge-if-needed)
       (game-over state))))
 
-(defn move [current-state new-state]
+(defn change-state [current-state new-state]
   (if (is-acceptable new-state)
     new-state
     current-state))
 
 (defn move-left [state]
-  (move state (update state :x dec)))
+  (change-state state (update state :x dec)))
 
 (defn move-right [state]
-  (move state (update state :x inc)))
+  (change-state state (update state :x inc)))
 
 (def handlers
   {::descend    descend-handler
@@ -479,14 +479,18 @@
 
 
 
-;; - actions:
-;    - rotate left/right
-;    - complete
+;; - rotate left/right
+;; - completing
 ;;
-;; - proper test coverage, refactor, simplify
-;;
+;; - proper test coverage
 ;; - cleaning the line
 ;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
+;;
+;;
+;;
+;;
+;; - finding bugs
+;; - refactor, simplify
 ;; - speed as parameters
 ;; - show next item
 ;; - switching levels?
@@ -499,6 +503,8 @@
 ;; - statistics
 
 ;; - check https://www.goodoldtetris.com
+;;
+;; - icons https://icones.js.org
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
 ;; domain name
