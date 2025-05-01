@@ -194,11 +194,11 @@
     (->> good-cells (filter false?) empty?)))
 
 
-(defn how-much-can-descend [{y                     :y
-                             field-height          :height
-                             {elem-height :height} :element
-                             :as                   state}]
-  (let [wish-to-descend (if (= y field-height) elem-height 1)
+(defn how-much-can-descend [wish-to {y                     :y
+                                     field-height          :height
+                                     {elem-height :height} :element
+                                     :as                   state}]
+  (let [wish-to-descend (if wish-to wish-to (if (= y field-height) elem-height 1))
         ;; 0 is current state, ordered last, always acceptable, used when others aren't
         acceptable-states (->> wish-to-descend
                                inc
@@ -231,7 +231,7 @@
                         height :height
                         :as    state}]
   (let [{elem-width :width :as next-element} (random-element)]
-    (if (pos? (how-much-can-descend state))
+    (if (pos? (how-much-can-descend 1 state))
       state
       (do (merge state {:field   (add-element-to-field state)
                         :x       (element-start-x width elem-width)
@@ -246,13 +246,15 @@
 (defn descend [distance {y      :y
                          height :height
                          :as    state}]
-  (if (= y height)
-    (update state :y #(- % distance))
-    (update state :y dec)))
+  (update state :y #(- % distance)))
 
 ;; todo add test
-(defn descend-handler [state]
-  (let [distance (how-much-can-descend state)]
+(defn descend-handler [{y                     :y
+                        field-height          :height
+                        {elem-height :height} :element
+                        :as state}]
+  (let [wish-to-descend (if (= y field-height) elem-height 1)
+        distance (how-much-can-descend wish-to-descend state)]
     (if (pos? distance)
       (->> state (descend distance) merge-if-needed)
       (game-over state))))
@@ -277,24 +279,28 @@
 (defn rotate [rotate-fn {{width  :width
                           height :height
                           shape  :shape} :element :as state}]
-  (change-state state (assoc state :element {:height width :width height :shape (vec (map vec (rotate-fn shape)))})))
+  (change-state state (assoc state :element {:height width :width height :shape (rotate-fn shape)})))
 
 (defn rotate-right [state]
   (rotate rotate-matrix-right state))
 
-
 (defn rotate-left [state]
   (rotate rotate-matrix-left state))
 
-
+(defn complete [state]
+  (let [distance (how-much-can-descend 2 state)]
+    (if (pos? distance)
+      (->> state (descend distance) merge-if-needed)
+      (state))))
 
 
 (def handlers
-  {::descend    descend-handler
-   ::move-left  move-left
-   ::move-right move-right
+  {::descend      descend-handler
+   ::move-left    move-left
+   ::move-right   move-right
    ::rotate-right rotate-right
-   ::rotate-left  rotate-left})
+   ::rotate-left  rotate-left
+   ::complete     complete})
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
     (log "New coords" (:x new-state) (:y new-state))
@@ -517,7 +523,6 @@
 
 
 
-;; - rotate left/right
 ;; - completing
 ;;
 ;; - proper test coverage
