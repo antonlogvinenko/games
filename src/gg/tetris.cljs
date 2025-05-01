@@ -23,18 +23,23 @@
 (defn none? [cell] (== cell none))
 (defn filled? [cell] (== cell filled))
 (defrecord SetColor [x y color])
-(defn at [table x y]
+(defn at
+  "Get table element at (x, y)"
+  [table x y]
   (-> table (nth y) (nth x)))
 
-(defn at? [table x y]
+(defn at?
+  "Does (x, y) coordinate belong to the table?"
+  [table x y]
   (-> table (nth y []) (nth x nil) nil? not))
 
-(defn show-field [field]
+(defn show-field
+  "Print the field so that rows with the lowest index
+  are at the bottom which requires a reverse"
+  [field]
   (log "The scene is:")
   (->> field reverse (map (fn [r] (log r))) dorun)
   field)
-
-(def no-element nil)
 
 ;; State represents UI field in (x,y) coords
 ;;
@@ -47,12 +52,20 @@
 ;; 0 1 2
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
-;;
-(defn indexed [coll]
+
+(defn indexed
+  "Add indices to the collection
+  (indexed [10 11 12]) -> [[0 10] [1 11] [2 12]]"
+  [coll]
   (map-indexed vector coll))
-(defn zip [coll-a coll-b]
+
+(defn zip
+  "Zip two collections together
+  (zip [1 2 3] ['a' 'b' 'c']) -> [[1 'a'] [2 'b'] [3 'c']]"
+  [coll-a coll-b]
   (map vector coll-a coll-b))
 
+; todo test
 (defn field-diff [state-a state-b]
   (for [[y [row-a row-b]] (indexed (zip state-a state-b))
         [x [a b]] (indexed (zip row-a row-b))
@@ -89,7 +102,7 @@
                       :Z
                       :J
                       :L])
-
+; todo test
 (defn element-start-x [field-width element-width]
   (- (int (/ field-width 2)) (int (/ element-width 2))))
 
@@ -112,12 +125,15 @@
 (def game-container (gdom/getElement "app"))
 
 ; https://www.w3schools.com/css/tryit.asp?filename=trycss_align_container
+; todo test
 (defn props [m]
   (->> m
        (map (fn [[k v]] (str k ":" v)))
        (str/join "; ")))
+; todo test
 (defn cell-id [y x]
   (str "cell:" y ":" x))
+; todo test
 (defn render-game-table [{height :height width :width}]
   (let [square-px 30
         sizer (fn [items] (str (* items square-px) "px"))
@@ -131,7 +147,7 @@
                                         (range width))))]
     [:div (into [:table {:style table-style}]
                 (map create-row (reverse (range height))))]))
-
+; todo test
 (defn get-rendered-references [{height :height width :width}]
   (for [y (range height)]
     (for [x (range width)]
@@ -171,6 +187,7 @@
 
 
 ;; -- Game logic
+; todo test
 (defn is-acceptable [{x                    :x
                       y                    :y
                       field-height         :height
@@ -193,7 +210,7 @@
                           empty?))]
     (->> good-cells (filter false?) empty?)))
 
-
+; todo test
 (defn how-much-can-descend [wish-to {y                     :y
                                      field-height          :height
                                      {elem-height :height} :element
@@ -209,6 +226,7 @@
                                (map first))]
     (first acceptable-states)))
 
+; todo test
 (defn add-element-to-field [{field           :field
                              x               :x
                              y               :y
@@ -243,9 +261,7 @@
   (game-over-message)
   state)
 ;; todo add test
-(defn descend [distance {y      :y
-                         height :height
-                         :as    state}]
+(defn descend [distance state]
   (update state :y #(- % distance)))
 
 ;; todo add test
@@ -259,34 +275,47 @@
       (->> state (descend distance) merge-if-needed)
       (game-over state))))
 
-(defn change-state [current-state new-state]
+; todo test
+; Cake is a lie
+(defn change-state
+  "Choose the new state if it is acceptable.
+  Otherwise, choose the current state."
+  [current-state new-state]
   (if (is-acceptable new-state)
     new-state
     current-state))
 
+; todo test
 (defn move-left [state]
   (change-state state (update state :x dec)))
 
+; todo test
 (defn move-right [state]
   (change-state state (update state :x inc)))
 
+; todo test
 (defn rotate-matrix-left [matrix]
   (apply map (comp reverse list) matrix))
 
+; todo test
 (defn rotate-matrix-right [matrix]
   (reverse (apply map list matrix)))
 
+; todo test
 (defn rotate [rotate-fn {{width  :width
                           height :height
                           shape  :shape} :element :as state}]
   (change-state state (assoc state :element {:height width :width height :shape (rotate-fn shape)})))
 
+; todo test
 (defn rotate-right [state]
   (rotate rotate-matrix-right state))
 
+; todo test
 (defn rotate-left [state]
   (rotate rotate-matrix-left state))
 
+; todo test
 (defn complete [state]
   (let [distance (how-much-can-descend 2 state)]
     (if (pos? distance)
@@ -301,12 +330,13 @@
    ::rotate-right rotate-right
    ::rotate-left  rotate-left
    ::complete     complete})
+; todo test
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
     (log "New coords" (:x new-state) (:y new-state))
     new-state))
 
-
+; todo test
 (defn render [last-displayed-state new-state]
   (show-field new-state)
   (field-diff last-displayed-state new-state))
@@ -525,14 +555,16 @@
 
 ;; - rotation - change coordinates?
 ;; - completing
-;;
-;; - proper test coverage
+;; - proper testing
 ;; - cleaning the line
 ;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
+;; - protect from copying
+;;   - run only on specified host, localhost not allowed in prod
+;;   - check that compiled code doesn't contain hostname strings
+;;   - compare hashes instead of strings, check hashes are not in the source codes
 ;;
-;;
-;;
-;;
+;; - arrowdown must be handled differently
+;; - actors must return their inbox? => less code
 ;; - finding bugs
 ;; - refactor, simplify
 ;; - speed as parameters

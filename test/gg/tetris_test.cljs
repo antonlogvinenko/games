@@ -7,6 +7,31 @@
 ;https://cljs.github.io/api/cljs.test/
 ;https://figwheel.org/config-options
 
+(deftest at-test
+  (is (== 42 (t/at [[0 0 0] [0 42 0] [0 0 0]] 1 1)) "get the element"))
+
+(deftest at?-test
+  (is (true? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 1 1)) "element is present")
+  (is (true? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 0 0)) "element is present")
+  (is (true? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 2 2)) "element is present")
+
+  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 3 0)) "element is absent")
+  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 0 3)) "element is absent")
+  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] -1 0)) "element is absent")
+  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 0 -1)) "element is absent")
+
+  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 3 3)) "element is absent"))
+
+(deftest indexed-test
+  (is (== [] (t/indexed [])) "empty index")
+  (is (== [[0 100] [1 101] [2 102]] (t/indexed [100 101 102])) "non empty index"))
+
+(deftest zip-test
+  (is (== [] (t/zip [] [])) "empty zip")
+  (is (== [[1 'a'] [2 'b'] [3 'c']] (t/zip [1 2 3] ['a' 'b' 'c'])) "non empty zip")
+  (is (== [[1 'a'] [2 'b'] [3 'c']] (t/zip [1 2 3] ['a' 'b' 'c' 'd'])) "non empty zip")
+  (is (== [[1 'a'] [2 'b'] [3 'c']] (t/zip [1 2 3 4] ['a' 'b' 'c'])) "non empty zip"))
+
 (deftest add-element-to-the-field
   (is (= [[0 0 0] [0 1 0] [0 1 1]]
          (t/add-element-to-field {:x       1 :y 1
@@ -111,7 +136,5 @@
   (is (= :gg.tetris/rotate-left
          (t/interpret-kbd-input {:modifiers ["shift"] :pressed "enter"}))
       "enter rotate left"))
-
-
 
 
