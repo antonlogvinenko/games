@@ -234,7 +234,7 @@
   (stop)
   (game-over-message!)
   state)
-;; todo add test
+
 (defn descend [distance state]
   (update state :y #(- % distance)))
 
@@ -249,10 +249,7 @@
       (->> state (descend distance) (merge-if-needed random-element))
       (game-over state))))
 
-
-; todo test
-(defn change-state
-  [current-state new-state]
+(defn change-state [current-state new-state]
   (if (is-acceptable new-state)
     new-state
     current-state))
