@@ -270,3 +270,33 @@
 
     (is (== acceptable-2 (t/change-state acceptable-1 acceptable-2))
         "new acceptable state accepted")))
+
+(deftest move-left-test
+  (let [to-move {:x       1 :y 2
+                 :height  4 :width 4
+                 :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                 :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        moved {:x       0 :y 2
+               :height  4 :width 4
+               :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
+    (is (== moved (t/move-left to-move))
+        "can move left")
+
+    (is (== moved (t/move-left moved))
+        "cannot move left")))
+
+(deftest move-right-test
+  (let [to-move {:x       1 :y 2
+                 :height  4 :width 4
+                 :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                 :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        moved {:x       2 :y 2
+               :height  4 :width 4
+               :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
+    (is (== moved (t/move-right to-move))
+        "can move right")
+
+    (is (== moved (t/move-right moved))
+        "cannot move right")))

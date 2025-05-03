@@ -238,7 +238,7 @@
 (defn descend [distance state]
   (update state :y #(- % distance)))
 
-;; todo add test
+;; todo test
 (defn descend-handler [{y                     :y
                         field-height          :height
                         {elem-height :height} :element
@@ -254,11 +254,9 @@
     new-state
     current-state))
 
-; todo test
 (defn move-left [state]
   (change-state state (update state :x dec)))
 
-; todo test
 (defn move-right [state]
   (change-state state (update state :x inc)))
 
