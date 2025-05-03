@@ -17,10 +17,6 @@
 
 
 ;; -- Game state
-(def none 0)
-(def filled 1)
-(defn none? [cell] (== cell none))
-(defn filled? [cell] (== cell filled))
 (defrecord FieldDiff [x y color])
 (defn at [table x y]
   (-> table (nth y) (nth x)))
@@ -103,7 +99,7 @@
      :y       height
      :element element
      :ticking ticking
-     :field   (vec (repeat height (vec (repeat width none))))}))
+     :field   (vec (repeat height (vec (repeat width 0))))}))
 
 
 
@@ -166,7 +162,6 @@
       [:div {:id "game-message"}]
       (render-game-table parameters)))
   (get-rendered-references! parameters))
-
 
 
 ;; -- Game logic
@@ -259,6 +254,19 @@
 (defn move-right [state]
   (change-state state (update state :x inc)))
 
+; row to column conversion:
+;  [1 0]
+;  [1 0]
+;  [1 1]
+;
+; 1. top to bottom, straight indices -> turn left
+; 0 0 1
+; 1 1 1
+;
+; 2. bottom to top, inverted indices -> turn right
+; 1 1 1
+; 1 0 0
+
 (defn rotate-matrix-left [matrix]
   (apply map (comp reverse list) matrix))
 
@@ -338,20 +346,6 @@
 (derive ::move-right ::action)
 (derive ::rotate-left ::action)
 (derive ::rotate-right ::action)
-
-
-; row to column conversion:
-;  [1 0]
-;  [1 0]
-;  [1 1]
-;
-; 1. top to bottom, straight indices -> turn left
-; 0 0 1
-; 1 1 1
-; 
-; 2. bottom to top, inverted indices -> turn right
-; 1 1 1
-; 1 0 0
 
 
 (defn interpret-kbd-input [input]
@@ -507,14 +501,14 @@
 (start! default-parameters)
 
 
-;; - game is not over if continuously press arrowdown
-;; - rotation - change coordinates?
 ;; - clearing a row
 ;; - protect from copying
 ;;   - run only on specified host, localhost not allowed in prod
 ;;   - check that compiled code doesn't contain hostname strings
 ;;   - compare hashes instead of strings, check hashes are not in the source codes
 ;;
+;; - rotation - change coordinates?
+;; - game is not over if continuously press arrowdown
 ;; - recording states so i can debug
 ;; - arrowdown must be handled differently
 ;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
