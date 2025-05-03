@@ -233,15 +233,42 @@
 (defn descend [distance state]
   (update state :y #(- % distance)))
 
-(defn descend-handler [{y                     :y
-                        field-height          :height
-                        {elem-height :height} :element
-                        :as                   state}]
-  (let [wish-to-descend (if (= y field-height) elem-height 1)
-        distance (how-much-can-descend wish-to-descend state)]
-    (if (pos? distance)
-      (->> state (descend distance) (merge-if-needed random-element))
-      (game-over state))))
+; todo test
+(defn get-clear-candidates [{height :height
+                             field  :field}]
+  (for [y (range 0 height)
+        :when (->> y (nth field) (every? (partial == 1)))]
+    y))
+
+; todo test
+(defn do-clear-candidates [ys-to-remove {height :height
+                                         width  :width
+                                         field  :field
+                                         :as    state}]
+  (let [high-y (apply max ys-to-remove)
+        low-y (apply min ys-to-remove)
+        cleared (count ys-to-remove)]
+    (assoc state :field
+                 (vec (concat
+                        (if (pos? low-y) (subvec field 0 low-y) [])
+                        (if (< high-y height) (subvec field (inc high-y) height) [])
+                        (vec (repeat cleared (vec (repeat width 0)))))))))
+
+
+
+(defn game-tick-handler [{y                     :y
+                          field-height          :height
+                          {elem-height :height} :element
+                          :as                   state}]
+  (let [clear-candidates (get-clear-candidates state)]
+    (if (empty? clear-candidates)
+      (let [wish-to-descend (if (= y field-height) elem-height 1)
+            distance (how-much-can-descend wish-to-descend state)]
+        (if (pos? distance)
+          (->> state (descend distance) (merge-if-needed random-element))
+          (game-over state)))
+      (do-clear-candidates clear-candidates state))))
+
 
 (defn change-state [current-state new-state]
   (if (is-acceptable new-state)
@@ -292,7 +319,7 @@
 
 
 (def handlers
-  {::descend      descend-handler
+  {:game-tick     game-tick-handler
    ::move-left    move-left
    ::move-right   move-right
    ::rotate-right rotate-right
@@ -340,7 +367,7 @@
 
 (defn default-ch [] (chan (async/sliding-buffer 10)))
 
-(derive ::descend ::action)
+(derive :game-tick ::action)
 (derive ::complete ::action)
 (derive ::move-left ::action)
 (derive ::move-right ::action)
@@ -462,7 +489,7 @@
            timed-ch
            action-ch
            {}
-           (fn [{msg :msg}] {:msg ::descend}))
+           (fn [{msg :msg}] {:msg :game-tick}))
 
     (actor "kbd interpreter"
            false
@@ -501,18 +528,19 @@
 (start! default-parameters)
 
 
-;; - clearing a row
+;; - unit test: do clear candidates, get clear candidates
+;;
 ;; - protect from copying
 ;;   - run only on specified host, localhost not allowed in prod
 ;;   - check that compiled code doesn't contain hostname strings
 ;;   - compare hashes instead of strings, check hashes are not in the source codes
-;;
 ;; - rotation - change coordinates?
+;; 
 ;; - game is not over if continuously press arrowdown
 ;; - recording states so i can debug
 ;; - arrowdown must be handled differently
 ;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
-;;
+;; - game tick sync: clearing a level and next element?
 ;;
 ;; - actors must return their inbox? => less code
 ;; - finding bugs
