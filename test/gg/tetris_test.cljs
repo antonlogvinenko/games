@@ -218,3 +218,25 @@
                                                                              :element {:width 2 :height 3 :shape [[1 1] [1 0] [1 0]]}
                                                                              :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
       "add L"))
+
+(deftest merge-if-needed-test
+  (let [elem-generator (fn [] {:width 2 :height 3 :shape [[1 1] [1 0] [1 0]]})]
+    (is (== {:x 1 :y 1
+             :height 4 :width 4
+             :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+             :field [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+            (t/merge-if-needed elem-generator {:x       1 :y 1
+                                               :height  4 :width 4
+                                               :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+        "not merged")
+
+    (is (== {:x 1 :y 4
+             :height 4 :width 4
+             :element {:width 2 :height 3 :shape [[1 1] [1 0] [1 0]]}
+             :field [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
+            (t/merge-if-needed elem-generator {:x       1 :y 0
+                                               :height  4 :width 4
+                                               :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+        "merged")))

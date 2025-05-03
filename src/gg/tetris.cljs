@@ -219,17 +219,17 @@
         (recur bs (assoc-in field [yb xb] 1))
         field))))
 
-;; todo add test
-(defn merge-if-needed [{width  :width
-                        height :height
-                        :as    state}]
-  (let [{elem-width :width :as next-element} (random-element)]
+(defn merge-if-needed [elem-generator {width  :width
+                                       height :height
+                                       :as    state}]
+  (let [{elem-width :width :as next-element} (elem-generator)]
     (if (pos? (how-much-can-descend 1 state))
       state
       (do (merge state {:field   (add-element-to-field state)
                         :x       (element-start-x width elem-width)
                         :y       height
                         :element next-element})))))
+
 (defn game-over [{stop :stop :as state}]
   (stop)
   (game-over-message!)
@@ -246,8 +246,9 @@
   (let [wish-to-descend (if (= y field-height) elem-height 1)
         distance (how-much-can-descend wish-to-descend state)]
     (if (pos? distance)
-      (->> state (descend distance) merge-if-needed)
+      (->> state (descend distance) (merge-if-needed random-element))
       (game-over state))))
+
 
 ; todo test
 (defn change-state
@@ -290,7 +291,7 @@
 (defn complete [state]
   (let [distance (how-much-can-descend 2 state)]
     (if (pos? distance)
-      (->> state (descend distance) merge-if-needed)
+      (->> state (descend distance) (merge-if-needed random-element))
       (state))))
 
 
@@ -519,6 +520,7 @@
 
 
 ;; - proper testing
+;; - game is not over if continuously press arrowdown
 ;; - rotation - change coordinates?
 ;; - clearing a row
 ;; - protect from copying
