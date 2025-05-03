@@ -192,7 +192,6 @@
                           empty?))]
     (->> good-cells (filter false?) empty?)))
 
-; todo test
 (defn how-much-can-descend [wish-to state]
   (->> wish-to
        inc
@@ -203,7 +202,6 @@
        (map first)
        first))
 
-; todo test
 (defn add-element-to-field [{field           :field
                              x               :x
                              y               :y

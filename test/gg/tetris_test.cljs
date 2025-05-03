@@ -178,3 +178,43 @@
                                 :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
                                 :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
       "moved too low"))
+
+
+(deftest how-much-can-descend-test
+  (is (== 4 (t/how-much-can-descend 100 {:x       1 :y 4
+                                         :height  4 :width 4
+                                         :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                         :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend from start")
+
+  (is (== 4 (t/how-much-can-descend 4 {:x       1 :y 4
+                                       :height  4 :width 4
+                                       :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                       :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend from start, real request")
+
+  (is (== 2 (t/how-much-can-descend 100 {:x       2 :y 2
+                                         :height  4 :width 4
+                                         :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                         :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend in the middle")
+
+  (is (== 1 (t/how-much-can-descend 1 {:x       2 :y 2
+                                       :height  4 :width 4
+                                       :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                       :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend in the middle, real request"))
+
+
+(deftest add-element-to-the-field-test
+  (is (== [[0 0 0 0] [0 1 1 0] [0 1 1 0] [0 0 0 0]] (t/add-element-to-field {:x       1 :y 1
+                                                                             :height  4 :width 4
+                                                                             :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                                                             :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "add square")
+
+  (is (== [[0 0 0 0] [0 1 1 0] [0 1 0 0] [0 1 0 0]] (t/add-element-to-field {:x       1 :y 1
+                                                                             :height  4 :width 4
+                                                                             :element {:width 2 :height 3 :shape [[1 1] [1 0] [1 0]]}
+                                                                             :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "add L"))
