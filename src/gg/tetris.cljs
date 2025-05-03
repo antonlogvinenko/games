@@ -238,7 +238,6 @@
 (defn descend [distance state]
   (update state :y #(- % distance)))
 
-;; todo test
 (defn descend-handler [{y                     :y
                         field-height          :height
                         {elem-height :height} :element
@@ -260,29 +259,23 @@
 (defn move-right [state]
   (change-state state (update state :x inc)))
 
-; todo test
 (defn rotate-matrix-left [matrix]
   (apply map (comp reverse list) matrix))
 
-; todo test
 (defn rotate-matrix-right [matrix]
   (reverse (apply map list matrix)))
 
-; todo test
 (defn rotate [rotate-fn {{width  :width
                           height :height
                           shape  :shape} :element :as state}]
   (change-state state (assoc state :element {:height width :width height :shape (rotate-fn shape)})))
 
-; todo test
 (defn rotate-right [state]
   (rotate rotate-matrix-right state))
 
-; todo test
 (defn rotate-left [state]
   (rotate rotate-matrix-left state))
 
-; todo test
 (defn complete [state]
   (let [distance (how-much-can-descend 2 state)]
     (if (pos? distance)
@@ -297,7 +290,7 @@
    ::rotate-right rotate-right
    ::rotate-left  rotate-left
    ::complete     complete})
-; todo test
+
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
     (log "New coords" (:x new-state) (:y new-state))
@@ -514,7 +507,6 @@
 (start! default-parameters)
 
 
-;; - proper testing
 ;; - game is not over if continuously press arrowdown
 ;; - rotation - change coordinates?
 ;; - clearing a row

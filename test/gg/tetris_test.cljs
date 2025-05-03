@@ -300,3 +300,55 @@
 
     (is (== moved (t/move-right moved))
         "cannot move right")))
+
+(deftest rotate-matrix-left-test
+  (is (== [[1 1 1] [0 0 1]] (t/rotate-matrix-left [[1 1] [1 0] [1 0]])))
+  (is (== [[1 1] [1 1]] (t/rotate-matrix-left [[1 1] [1 1]]))))
+
+(deftest rotate-matrix-right-test
+  (is (== [[1 0 0] [1 1 1]] (t/rotate-matrix-right [[1 1] [1 0] [1 0]])))
+  (is (== [[1 1] [1 1]] (t/rotate-matrix-right [[1 1] [1 1]]))))
+
+(deftest rotate-right-test
+  (let [to-rotate {:x       1 :y 1
+                   :height  4 :width 4
+                   :element {:width 2 :height 3 :shape [[1 1] [1 0] [1 0]]}
+                   :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        rotated {:x       1 :y 1
+                 :height  4 :width 4
+                 :element {:width 3 :height 2 :shape [[1 0 0] [1 1 1]]}
+                 :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
+    (is (== rotated (t/rotate-right to-rotate))
+        "rotate right")))
+
+(deftest rotate-left-test
+  (let [to-rotate {:x       1 :y 1
+                   :height  4 :width 4
+                   :element {:width 2 :height 3 :shape [[1 1] [1 0] [1 0]]}
+                   :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        rotated {:x       1 :y 1
+                 :height  4 :width 4
+                 :element {:width 3 :height 2 :shape [[1 1 1] [0 0 1]]}
+                 :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
+    (is (== rotated (t/rotate-left to-rotate))
+        "rotate left")))
+
+(deftest action-handler-test
+  (let [to-move {:x       1 :y 2
+                 :height  4 :width 4
+                 :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                 :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        moved {:x       0 :y 2
+               :height  4 :width 4
+               :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
+    (is (== moved (t/action-handler to-move ::t/move-left)))))
+
+(deftest complete-test
+  (let [to-complete {:x       1 :y 2
+                     :height  4 :width 4
+                     :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                     :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        completed (t/complete to-complete)]
+    (is (== {:x 1 :y 4 :field [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
+            (select-keys completed [:x :y :field])))))
