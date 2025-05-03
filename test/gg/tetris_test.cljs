@@ -148,3 +148,33 @@
       "enter rotate left"))
 
 
+(deftest is-acceptable-test
+  (is (true? (t/is-acceptable {:x       1 :y 1
+                               :height  4 :width 4
+                               :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "no intersection")
+
+  (is (false? (t/is-acceptable {:x       1 :y 1
+                                :height  4 :width 4
+                                :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                :field   [[0 1 1 0] [0 1 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "intersection")
+
+  (is (false? (t/is-acceptable {:x       -1 :y 1
+                                :height  4 :width 4
+                                :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "moved left too far")
+
+  (is (false? (t/is-acceptable {:x       4 :y 1
+                                :height  4 :width 4
+                                :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "moved right too far")
+
+  (is (false? (t/is-acceptable {:x       4 :y -1
+                                :height  4 :width 4
+                                :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
+                                :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "moved too low"))

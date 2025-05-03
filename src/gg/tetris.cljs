@@ -170,7 +170,6 @@
 
 
 ;; -- Game logic
-; todo test
 (defn is-acceptable [{x                    :x
                       y                    :y
                       field-height         :height
@@ -233,7 +232,6 @@
                         :x       (element-start-x width elem-width)
                         :y       height
                         :element next-element})))))
-;; todo add test
 (defn game-over [{stop :stop :as state}]
   (stop)
   (game-over-message!)
@@ -254,7 +252,6 @@
       (game-over state))))
 
 ; todo test
-; Cake is a lie
 (defn change-state
   [current-state new-state]
   (if (is-acceptable new-state)
@@ -523,18 +520,19 @@
 (start! default-parameters)
 
 
-
-;; - rotation - change coordinates?
-;; - completing
 ;; - proper testing
-;; - cleaning the line
-;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
+;; - rotation - change coordinates?
+;; - clearing a row
 ;; - protect from copying
 ;;   - run only on specified host, localhost not allowed in prod
 ;;   - check that compiled code doesn't contain hostname strings
 ;;   - compare hashes instead of strings, check hashes are not in the source codes
 ;;
+;; - recording states so i can debug
 ;; - arrowdown must be handled differently
+;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
+;;
+;;
 ;; - actors must return their inbox? => less code
 ;; - finding bugs
 ;; - refactor, simplify
