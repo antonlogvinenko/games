@@ -196,7 +196,7 @@
        reverse
        (map (fn [d] [d (update state :y #(- % d))]))
        (filter (comp is-acceptable second))
-       (map first)
+       first
        first))
 
 (defn add-element-to-field [{field           :field
@@ -426,6 +426,18 @@
 (defonce game (atom {:stop #()}))
 (defn stop! []
   ((:stop @game)))
+
+
+(defn get-location [] js/window.location.host)
+
+(defn verification []
+  (let [host (-> (get-location) (str/split ":") first)
+        allowed-hosts ["localhost" "retrogames.com"]]
+    (when
+      (not-any? #{host} allowed-hosts)
+      (throw (js/Error. "Oops!")))))
+
+
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
@@ -448,6 +460,8 @@
                                         dorun)))]
 
     (game-started-message!)
+
+    (verification)
 
     (actor "renderer"
            false
@@ -526,23 +540,24 @@
     nil))
 
 
+
 (start! default-parameters)
 
 
-;; - unit test: do clear candidates, get clear candidates
+;; - rotation - change coordinates?
 ;;
 ;; - protect from copying
 ;;   - run only on specified host, localhost not allowed in prod
 ;;   - check that compiled code doesn't contain hostname strings
 ;;   - compare hashes instead of strings, check hashes are not in the source codes
-;; - rotation - change coordinates?
 ;;
 ;; - game is not over if continuously press arrowdown
-;; - recording states so i can debug
 ;; - arrowdown must be handled differently
 ;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
 ;; - game tick sync: clearing a level and next element?
+;; - recording states so i can debug
 ;;
+;; - design: web page buttons so you can play it on your phone
 ;; - actors must return their inbox? => less code
 ;; - finding bugs
 ;; - refactor, simplify
