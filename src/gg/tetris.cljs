@@ -4,8 +4,8 @@
             [goog.dom :as gdom]
             [goog.events :as gevents]
             [cljs.core.async :refer [go-loop go <! >! timeout chan put! alts!] :as async]
-            [clojure.string :as str]))
-
+            [clojure.string :as str]
+            [gg.md5 :refer [md5]]))
 
 
 ;; -- Logging
@@ -431,8 +431,10 @@
 (defn get-location [] js/window.location.host)
 
 (defn verification []
-  (let [host (-> (get-location) (str/split ":") first)
-        allowed-hosts ["localhost" "retrogames.com"]]
+  (let [host (-> (get-location) (str/split ":") first md5)
+        allowed-hosts [
+                       "8561520c9e13eeb5b228e32c163800c1"
+                       "db6d8dce28da168c3546ca7358c91d7a"]]
     (when
       (not-any? #{host} allowed-hosts)
       (throw (js/Error. "Oops!")))))
@@ -545,25 +547,38 @@
 
 
 ;; - rotation - change coordinates?
+;; - game tick sync: clearing a level and only THEN the next element?
+;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
+;; - arrowdown must be handled differently - smooth descend
+;; - game is not over if continuously press arrowdown
+;; - try https://domainlockjs.com
+;;  - show next item
+;;
+;;  - speed as parameters
+;;  - calculating score
+;;  - switching levels?
 ;;
 ;; - protect from copying
-;;   - run only on specified host, localhost not allowed in prod
-;;   - check that compiled code doesn't contain hostname strings
-;;   - compare hashes instead of strings, check hashes are not in the source codes
+;;   - https://domainlockjs.com
+;;   - less direct: set var, not exception
+;;   - call from several places
+;;   - hide reading .location .host - get property via eval?
+;;   - send js from backend
+;;   - send js via websockets
+;;   - use hashing for location.host
+;;   - no lists of hosts
+;;   - append/prepend random string for hashed/unhashed
+;;   - indirect result, no direct exceptions
+;;   - call verification from several places
+;;   - use https://utf-8.jp/public/jjencode.html
+;;   - use sockets https://stackoverflow.com/questions/1660060/how-to-prevent-your-javascript-code-from-being-stolen-copied-and-viewed
+;;   - !!! You can use an ajax script injection. This is deters theft because the same domain policy which prevents XSS will make the client side script difficult to run elsewhere.
 ;;
-;; - game is not over if continuously press arrowdown
-;; - arrowdown must be handled differently
-;; - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
-;; - game tick sync: clearing a level and next element?
+
+
 ;; - recording states so i can debug
-;;
 ;; - design: web page buttons so you can play it on your phone
 ;; - actors must return their inbox? => less code
-;; - finding bugs
-;; - refactor, simplify
-;; - speed as parameters
-;; - show next item
-;; - switching levels?
 ;; - controls info
 ;; - color schemes to choose
 ;; - new game button
