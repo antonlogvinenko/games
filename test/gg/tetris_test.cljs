@@ -22,6 +22,22 @@
 
   (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 3 3)) "element is absent"))
 
+
+(deftest get-clear-candidates-test
+  (is (== nil (t/get-clear-candidates {:height 4 :field [[0 0 0 1] [1 0 0 0] [0 1 0 1] [1 0 1 0]]})))
+  (is (= [0 0] (t/get-clear-candidates {:height 4 :field [[1 1 1 1] [1 0 0 0] [0 1 0 1] [1 0 1 0]]})))
+  (is (= [0 2] (t/get-clear-candidates {:height 4 :field [[1 1 1 1] [1 1 1 1] [1 1 1 1] [1 0 1 0]]})))
+  (is (= [1 2] (t/get-clear-candidates {:height 4 :field [[0 0 0 0] [1 1 1 1] [1 1 1 1] [1 0 1 0]]}))))
+
+(deftest do-clear-candidates-test
+  (is (== [[1 0 0 0] [0 1 0 0] [0 0 1 0] [0 0 0 0]]
+          (:field
+            (t/do-clear-candidates [0 0] {:height 4 :width 4 :field [[1 1 1 1] [1 0 0 0] [0 1 0 0] [0 0 1 0]]}))))
+
+  (is (== [[1 0 0 0] [0 1 0 0] [0 0 0 0] [0 0 0 0]]
+          (:field
+            (t/do-clear-candidates [1 2] {:height 4 :width 4 :field [[1 0 0 0] [1 1 1 1] [1 1 1 1] [0 1 0 0]]})))))
+
 (deftest indexed-test
   (is (== [] (t/indexed [])) "empty index")
   (is (== [[0 100] [1 101] [2 102]] (t/indexed [100 101 102])) "non empty index"))
@@ -352,3 +368,4 @@
         completed (t/complete to-complete)]
     (is (== {:x 1 :y 4 :field [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
             (select-keys completed [:x :y :field])))))
+

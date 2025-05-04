@@ -86,6 +86,8 @@
 
 (defn element-start-x [field-width element-width]
   (- (int (/ field-width 2)) (int (/ element-width 2))))
+(defn create-empty-matrix [height width]
+  (vec (repeat height (vec (repeat width 0)))))
 
 (defn random-element []
   (->> tetromino-names count rand-int (nth tetromino-names) tetrominos))
@@ -99,7 +101,7 @@
      :y       height
      :element element
      :ticking ticking
-     :field   (vec (repeat height (vec (repeat width 0))))}))
+     :field   (create-empty-matrix height width)}))
 
 
 
@@ -233,27 +235,25 @@
 (defn descend [distance state]
   (update state :y #(- % distance)))
 
-; todo test
 (defn get-clear-candidates [{height :height
                              field  :field}]
-  (for [y (range 0 height)
-        :when (->> y (nth field) (every? (partial == 1)))]
-    y))
+  (->> height
+       (range 0)
+       (filter (fn [y] (->> y (nth field) (every? (partial == 1)))))
+       seq
+       (#(when % ((juxt first last) %)))))
 
-; todo test
-(defn do-clear-candidates [ys-to-remove {height :height
-                                         width  :width
-                                         field  :field
-                                         :as    state}]
-  (let [high-y (apply max ys-to-remove)
-        low-y (apply min ys-to-remove)
-        cleared (count ys-to-remove)]
-    (assoc state :field
-                 (vec (concat
-                        (if (pos? low-y) (subvec field 0 low-y) [])
-                        (if (< high-y height) (subvec field (inc high-y) height) [])
-                        (vec (repeat cleared (vec (repeat width 0)))))))))
-
+(defn do-clear-candidates [[low-y high-y] {height :height
+                                           width  :width
+                                           field  :field
+                                           :as    state}]
+  (let [cleared (inc (- high-y low-y))]
+    (assoc state
+      :field
+      (vec (concat
+             (when (pos? low-y) (subvec field 0 low-y))
+             (when (< high-y height) (subvec field (inc high-y) height))
+             (create-empty-matrix cleared width))))))
 
 
 (defn game-tick-handler [{y                     :y
@@ -261,13 +261,14 @@
                           {elem-height :height} :element
                           :as                   state}]
   (let [clear-candidates (get-clear-candidates state)]
-    (if (empty? clear-candidates)
+    (if clear-candidates
+      (do-clear-candidates clear-candidates state)
       (let [wish-to-descend (if (= y field-height) elem-height 1)
             distance (how-much-can-descend wish-to-descend state)]
         (if (pos? distance)
           (->> state (descend distance) (merge-if-needed random-element))
-          (game-over state)))
-      (do-clear-candidates clear-candidates state))))
+          (game-over state))))))
+
 
 
 (defn change-state [current-state new-state]
@@ -535,7 +536,7 @@
 ;;   - check that compiled code doesn't contain hostname strings
 ;;   - compare hashes instead of strings, check hashes are not in the source codes
 ;; - rotation - change coordinates?
-;; 
+;;
 ;; - game is not over if continuously press arrowdown
 ;; - recording states so i can debug
 ;; - arrowdown must be handled differently
