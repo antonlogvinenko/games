@@ -57,25 +57,30 @@
 ;; https://tetris.fandom.com/wiki/Tetromino
 (def tetrominos {
                  :o {:height 1 :width 1 :shape [[1]]}
-                 :I {:height 1 :width 4 :shape [[1 1 1 1]]}
+                 :I {:height 4 :width 4 :shape [[0 0 0 0]
+                                                [0 0 0 0]
+                                                [1 1 1 1]
+                                                [0 0 0 0]]}
                  :O {:height 2 :width 2 :shape [[1 1]
                                                 [1 1]]}
-                 :T {:height 2 :width 3 :shape [[1 1 1]
+                 :T {:height 3 :width 3 :shape [[0 0 0]
+                                                [1 1 1]
                                                 [0 1 0]]}
-                 :S {:height 2 :width 3 :shape [[1 1 0]
+                 :S {:height 3 :width 3 :shape [[0 0 0]
+                                                [1 1 0]
                                                 [0 1 1]]}
-                 :Z {:height 2 :width 3 :shape [[0 1 1]
+                 :Z {:height 3 :width 3 :shape [[0 0 0]
+                                                [0 1 1]
                                                 [1 1 0]]}
-                 :J {:height 3 :width 2 :shape [[1 1]
-                                                [0 1]
-                                                [0 1]]}
-                 :L {:height 3 :width 2 :shape [[1 1]
-                                                [1 0]
-                                                [1 0]]}})
+                 :J {:height 3 :width 3 :shape [[0 0 0]
+                                                [1 1 1]
+                                                [1 0 0]]}
+                 :L {:height 3 :width 3 :shape [[0 0 0]
+                                                [1 1 1]
+                                                [0 0 1]]}})
 
 
 (def tetromino-names [
-                      ;:o
                       :I
                       :O
                       :T
@@ -157,7 +162,7 @@
 (defn create-parameters [height width ticking]
   {:height height :width width :ticking ticking})
 
-(def default-parameters (create-parameters 20 12 500))
+(def default-parameters (create-parameters 20 12 2000))
 (defn render-game! [parameters]
   (set-game-html!
     (hiccups/html
@@ -178,10 +183,13 @@
   (let [good-cells (for [xi (range 0 elem-width)
                          :let [xg (+ xi x)]
                          yi (range 0 elem-height)
+                         :let [in (at shape xi yi)]
                          :let [yg (+ yi y)]
                          :when (< yg field-height)]
-                     (->> [#(and (>= xg 0) (< xg field-width))
-                           #(>= yg 0)
+                     (->> [
+                           #(or (>= xg 0) (== 0 in))
+                           #(or (< xg field-width) (== 0 in))
+                           #(or (>= yg 0) (== 0 in))
                            #(or (= 0 (at shape xi yi))
                                 (= 0 (at field xg yg)))]
                           (map apply)
@@ -443,7 +451,7 @@
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 500)
+        timed-ch (create-timed-ch timed-ch-ctrl 1000)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -506,7 +514,7 @@
            timed-ch
            action-ch
            {}
-           (fn [{msg :msg}] {:msg :game-tick}))
+           (fn [_] {:msg :game-tick}))
 
     (actor "kbd interpreter"
            false
@@ -547,6 +555,7 @@
 
 
 ;; - rotation - change coordinates?
+;;
 ;; - game tick sync: clearing a level and only THEN the next element?
 ;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
 ;; - arrowdown must be handled differently - smooth descend
@@ -557,6 +566,7 @@
 ;;  - speed as parameters
 ;;  - calculating score
 ;;  - switching levels?
+;;  - pause the game when the the webpage is left
 ;;
 ;; - protect from copying
 ;;   - https://domainlockjs.com

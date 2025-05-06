@@ -366,6 +366,6 @@
                      :element {:width 2 :height 2 :shape [[1 1] [1 1]]}
                      :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
         completed (t/complete to-complete)]
-    (is (== {:x 1 :y 4 :field [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
+    (is (== {:x 0 :y 4 :field [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
             (select-keys completed [:x :y :field])))))
 
