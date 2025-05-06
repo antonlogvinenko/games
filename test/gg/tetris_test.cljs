@@ -317,14 +317,6 @@
     (is (== moved (t/move-right moved))
         "cannot move right")))
 
-(deftest rotate-matrix-left-test
-  (is (== [[1 1 1] [0 0 1]] (t/rotate-matrix-left [[1 1] [1 0] [1 0]])))
-  (is (== [[1 1] [1 1]] (t/rotate-matrix-left [[1 1] [1 1]]))))
-
-(deftest rotate-matrix-right-test
-  (is (== [[1 0 0] [1 1 1]] (t/rotate-matrix-right [[1 1] [1 0] [1 0]])))
-  (is (== [[1 1] [1 1]] (t/rotate-matrix-right [[1 1] [1 1]]))))
-
 (deftest rotate-right-test
   (let [to-rotate {:x       1 :y 1
                    :height  4 :width 4

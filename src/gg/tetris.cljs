@@ -55,30 +55,8 @@
         (FieldDiff. x y b))))
 
 ;; https://tetris.fandom.com/wiki/Tetromino
-(def tetrominos {
-                 :o {:size 1 :shape [[1]]}
-                 :I {:size 4 :shape [[0 0 0 0]
-                                     [0 0 0 0]
-                                     [1 1 1 1]
-                                     [0 0 0 0]]}
-                 :O {:size 2 :shape [[1 1]
-                                     [1 1]]}
-                 :T {:size 3 :shape [[0 0 0]
-                                     [1 1 1]
-                                     [0 1 0]]}
-                 :S {:size 3 :shape [[0 0 0]
-                                     [1 1 0]
-                                     [0 1 1]]}
-                 :Z {:size 3 :shape [[0 0 0]
-                                     [0 1 1]
-                                     [1 1 0]]}
-                 :J {:size 3 :shape [[0 0 0]
-                                     [1 1 1]
-                                     [1 0 0]]}
-                 :L {:size 3 :shape [[0 0 0]
-                                     [1 1 1]
-                                     [0 0 1]]}})
 
+(declare tetrominos)
 
 (def tetromino-names [
                       :I
@@ -94,17 +72,25 @@
 (defn create-empty-matrix [height width]
   (vec (repeat height (vec (repeat width 0)))))
 
+(defn get-tt [id form]
+  (let [tt (-> tetrominos id (nth form))
+        tsize (count tt)]
+    [tt tsize]))
+
 (defn random-element []
-  (->> tetromino-names count rand-int (nth tetromino-names) tetrominos))
+  (let [id (->> tetromino-names count rand-int (nth tetromino-names))]
+    [id (nth (get-tt id 0) 1)]))
+
 (defn init-state [{height :height width :width ticking :ticking} refs]
-  (let [{elem-size :size :as element} (random-element)]
+  (let [[id ts] (random-element)]
     {:stop    #()
      :height  height
      :width   width
      :refs    refs
-     :x       (element-start-x width elem-size)
+     :x       (element-start-x width ts)
      :y       height
-     :element element
+     :tid     id
+     :tform   0
      :ticking ticking
      :field   (create-empty-matrix height width)}))
 
@@ -171,25 +157,27 @@
   (get-rendered-references! parameters))
 
 
+
 ;; -- Game logic
-(defn is-acceptable [{x                  :x
-                      y                  :y
-                      field-height       :height
-                      field-width        :width
-                      {elem-size :size
-                       shape     :shape} :element
-                      field              :field}]
-  (let [good-cells (for [xi (range 0 elem-size)
+(defn is-acceptable [{x            :x
+                      y            :y
+                      field-height :height
+                      field-width  :width
+                      tid          :tid
+                      tform        :tform
+                      field        :field}]
+  (let [[tt tsize] (get-tt tid tform)
+        good-cells (for [xi (range 0 tsize)
                          :let [xg (+ xi x)]
-                         yi (range 0 elem-size)
-                         :let [in (at shape xi yi)]
+                         yi (range 0 tsize)
+                         :let [in (at tt xi yi)]
                          :let [yg (+ yi y)]
                          :when (< yg field-height)]
                      (->> [
                            #(or (>= xg 0) (== 0 in))
                            #(or (< xg field-width) (== 0 in))
                            #(or (>= yg 0) (== 0 in))
-                           #(or (= 0 (at shape xi yi))
+                           #(or (= 0 (at tt xi yi))
                                 (= 0 (at field xg yg)))]
                           (map apply)
                           (filter false?)
@@ -206,14 +194,15 @@
        first
        first))
 
-(defn add-element-to-field [{field              :field
-                             x                  :x
-                             y                  :y
-                             {elem-size :size
-                              shape     :shape} :element}]
-  (let [blocks (for [ye (range elem-size)
-                     xe (range elem-size)
-                     :when (= 1 (at shape xe ye))]
+(defn add-element-to-field [{field :field
+                             x     :x
+                             y     :y
+                             tid   :tid
+                             tform :tform}]
+  (let [[tt tsize] (get-tt tid tform)
+        blocks (for [ye (range tsize)
+                     xe (range tsize)
+                     :when (= 1 (at tt xe ye))]
                  [(+ xe x) (+ ye y)])
         visible-blocks (filter (fn [[x y]] (at? field x y)) blocks)]
     (loop [[[xb yb :as b] & bs] visible-blocks
@@ -225,13 +214,14 @@
 (defn merge-if-needed [elem-generator {width  :width
                                        height :height
                                        :as    state}]
-  (let [{elem-size :size :as next-element} (elem-generator)]
+  (let [[id ts] (elem-generator)]
     (if (pos? (how-much-can-descend 1 state))
       state
-      (do (merge state {:field   (add-element-to-field state)
-                        :x       (element-start-x width elem-size)
-                        :y       height
-                        :element next-element})))))
+      (do (merge state {:field (add-element-to-field state)
+                        :x     (element-start-x width ts)
+                        :y     height
+                        :tid   id
+                        :tform 0})))))
 
 (defn game-over [{stop :stop :as state}]
   (stop)
@@ -262,14 +252,16 @@
              (create-empty-matrix cleared width))))))
 
 
-(defn game-tick-handler [{y                 :y
-                          field-height      :height
-                          {elem-size :size} :element
-                          :as               state}]
-  (let [clear-candidates (get-clear-candidates state)]
+(defn game-tick-handler [{y            :y
+                          field-height :height
+                          tid          :tid
+                          tform        :tform
+                          :as          state}]
+  (let [[_ ts] (get-tt tid tform)
+        clear-candidates (get-clear-candidates state)]
     (if clear-candidates
       (do-clear-candidates clear-candidates state)
-      (let [wish-to-descend (if (= y field-height) elem-size 1)
+      (let [wish-to-descend (if (= y field-height) ts 1)
             distance (how-much-can-descend wish-to-descend state)]
         (if (pos? distance)
           (->> state (descend distance) (merge-if-needed random-element))
@@ -288,34 +280,11 @@
 (defn move-right [state]
   (change-state state (update state :x inc)))
 
-; row to column conversion:
-;  [1 0]
-;  [1 0]
-;  [1 1]
-;
-; 1. top to bottom, straight indices -> turn left
-; 0 0 1
-; 1 1 1
-;
-; 2. bottom to top, inverted indices -> turn right
-; 1 1 1
-; 1 0 0
-
-(defn rotate-matrix-left [matrix]
-  (apply map (comp reverse list) matrix))
-
-(defn rotate-matrix-right [matrix]
-  (reverse (apply map list matrix)))
-
-(defn rotate [rotate-fn {{elem-size :size
-                          shape     :shape} :element :as state}]
-  (change-state state (assoc state :element {:size elem-size :shape (rotate-fn shape)})))
-
 (defn rotate-right [state]
-  (rotate rotate-matrix-right state))
+  (update state :tform (comp #(mod % 4) inc)))
 
 (defn rotate-left [state]
-  (rotate rotate-matrix-left state))
+  (update state :tform (comp #(mod % 4) dec)))
 
 (defn complete [state]
   (let [distance (how-much-can-descend 2 state)]
@@ -346,6 +315,7 @@
     (listen #(put! kbd-inbox {:action :down :key (.-key %)})
             #(put! kbd-inbox {:action :up :key (.-key %)}))
     kbd-inbox))
+
 
 ;; fn : {:msg msg-in :state} -> {:msg msg-out :state state}
 ;; if msg-out is nil, the message is not sent to channel, only recur is performed
@@ -547,11 +517,40 @@
     nil))
 
 
-
 (start! default-parameters)
 
+(def tetrominos {
+                 :I [(reverse [[0 0 0 0] [1 1 1 1] [0 0 0 0] [0 0 0 0]])
+                     (reverse [[0 0 1 0] [0 0 1 0] [0 0 1 0] [0 0 1 0]])
+                     (reverse [[0 0 0 0] [0 0 0 0] [1 1 1 1] [0 0 0 0]])
+                     (reverse [[0 1 0 0] [0 1 0 0] [0 1 0 0] [0 1 0 0]])]
+                 :O [[[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]]]
+                 :T [(reverse [[0 1 0] [1 1 1] [0 0 0]])
+                     (reverse [[0 1 0] [0 1 1] [0 1 0]])
+                     (reverse [[0 0 0] [1 1 1] [0 1 0]])
+                     (reverse [[0 1 0] [1 1 0] [0 1 0]])]
+                 :S [(reverse [[0 1 1] [1 1 0] [0 0 0]])
+                     (reverse [[0 1 0] [0 1 1] [0 0 1]])
+                     (reverse [[0 0 0] [0 1 1] [1 1 0]])
+                     (reverse [[1 0 0] [1 1 0] [0 1 0]])]
+                 :Z [(reverse [[1 1 0] [0 1 1] [0 0 0]])
+                     (reverse [[0 0 1] [0 1 1] [0 1 0]])
+                     (reverse [[0 0 0] [1 1 0] [0 1 1]])
+                     (reverse [[0 1 0] [1 1 0] [1 0 0]])]
+                 :J [(reverse [[1 0 0] [1 1 1] [0 0 0]])
+                     (reverse [[0 1 1] [0 1 0] [0 1 0]])
+                     (reverse [[0 0 0] [1 1 1] [0 0 1]])
+                     (reverse [[0 1 0] [0 1 0] [1 1 0]])]
+                 :L [(reverse [[0 0 1] [1 1 1] [0 0 0]])
+                     (reverse [[0 1 0] [0 1 0] [0 1 1]])
+                     (reverse [[0 0 0] [1 1 1] [1 0 0]])
+                     (reverse [[1 1 0] [0 1 0] [1 1 0]])]})
 
-;; - rotation - change coordinates?
+;; - remove reverse
+;; - fix unit tests
+;; - add rotation system id - formal
+;;
+;; - fix appearing of elements
 ;;
 ;; - game tick sync: clearing a level and only THEN the next element?
 ;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
