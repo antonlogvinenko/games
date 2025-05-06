@@ -56,28 +56,28 @@
 
 ;; https://tetris.fandom.com/wiki/Tetromino
 (def tetrominos {
-                 :o {:height 1 :width 1 :shape [[1]]}
-                 :I {:height 4 :width 4 :shape [[0 0 0 0]
-                                                [0 0 0 0]
-                                                [1 1 1 1]
-                                                [0 0 0 0]]}
-                 :O {:height 2 :width 2 :shape [[1 1]
-                                                [1 1]]}
-                 :T {:height 3 :width 3 :shape [[0 0 0]
-                                                [1 1 1]
-                                                [0 1 0]]}
-                 :S {:height 3 :width 3 :shape [[0 0 0]
-                                                [1 1 0]
-                                                [0 1 1]]}
-                 :Z {:height 3 :width 3 :shape [[0 0 0]
-                                                [0 1 1]
-                                                [1 1 0]]}
-                 :J {:height 3 :width 3 :shape [[0 0 0]
-                                                [1 1 1]
-                                                [1 0 0]]}
-                 :L {:height 3 :width 3 :shape [[0 0 0]
-                                                [1 1 1]
-                                                [0 0 1]]}})
+                 :o {:size 1 :shape [[1]]}
+                 :I {:size 4 :shape [[0 0 0 0]
+                                     [0 0 0 0]
+                                     [1 1 1 1]
+                                     [0 0 0 0]]}
+                 :O {:size 2 :shape [[1 1]
+                                     [1 1]]}
+                 :T {:size 3 :shape [[0 0 0]
+                                     [1 1 1]
+                                     [0 1 0]]}
+                 :S {:size 3 :shape [[0 0 0]
+                                     [1 1 0]
+                                     [0 1 1]]}
+                 :Z {:size 3 :shape [[0 0 0]
+                                     [0 1 1]
+                                     [1 1 0]]}
+                 :J {:size 3 :shape [[0 0 0]
+                                     [1 1 1]
+                                     [1 0 0]]}
+                 :L {:size 3 :shape [[0 0 0]
+                                     [1 1 1]
+                                     [0 0 1]]}})
 
 
 (def tetromino-names [
@@ -97,12 +97,12 @@
 (defn random-element []
   (->> tetromino-names count rand-int (nth tetromino-names) tetrominos))
 (defn init-state [{height :height width :width ticking :ticking} refs]
-  (let [{elem-width :width :as element} (random-element)]
+  (let [{elem-size :size :as element} (random-element)]
     {:stop    #()
      :height  height
      :width   width
      :refs    refs
-     :x       (element-start-x width elem-width)
+     :x       (element-start-x width elem-size)
      :y       height
      :element element
      :ticking ticking
@@ -172,17 +172,16 @@
 
 
 ;; -- Game logic
-(defn is-acceptable [{x                    :x
-                      y                    :y
-                      field-height         :height
-                      field-width          :width
-                      {elem-width  :width
-                       elem-height :height
-                       shape       :shape} :element
-                      field                :field}]
-  (let [good-cells (for [xi (range 0 elem-width)
+(defn is-acceptable [{x                  :x
+                      y                  :y
+                      field-height       :height
+                      field-width        :width
+                      {elem-size :size
+                       shape     :shape} :element
+                      field              :field}]
+  (let [good-cells (for [xi (range 0 elem-size)
                          :let [xg (+ xi x)]
-                         yi (range 0 elem-height)
+                         yi (range 0 elem-size)
                          :let [in (at shape xi yi)]
                          :let [yg (+ yi y)]
                          :when (< yg field-height)]
@@ -207,14 +206,13 @@
        first
        first))
 
-(defn add-element-to-field [{field           :field
-                             x               :x
-                             y               :y
-                             {height :height
-                              width  :width
-                              shape  :shape} :element}]
-  (let [blocks (for [ye (range height)
-                     xe (range width)
+(defn add-element-to-field [{field              :field
+                             x                  :x
+                             y                  :y
+                             {elem-size :size
+                              shape     :shape} :element}]
+  (let [blocks (for [ye (range elem-size)
+                     xe (range elem-size)
                      :when (= 1 (at shape xe ye))]
                  [(+ xe x) (+ ye y)])
         visible-blocks (filter (fn [[x y]] (at? field x y)) blocks)]
@@ -227,11 +225,11 @@
 (defn merge-if-needed [elem-generator {width  :width
                                        height :height
                                        :as    state}]
-  (let [{elem-width :width :as next-element} (elem-generator)]
+  (let [{elem-size :size :as next-element} (elem-generator)]
     (if (pos? (how-much-can-descend 1 state))
       state
       (do (merge state {:field   (add-element-to-field state)
-                        :x       (element-start-x width elem-width)
+                        :x       (element-start-x width elem-size)
                         :y       height
                         :element next-element})))))
 
@@ -264,14 +262,14 @@
              (create-empty-matrix cleared width))))))
 
 
-(defn game-tick-handler [{y                     :y
-                          field-height          :height
-                          {elem-height :height} :element
-                          :as                   state}]
+(defn game-tick-handler [{y                 :y
+                          field-height      :height
+                          {elem-size :size} :element
+                          :as               state}]
   (let [clear-candidates (get-clear-candidates state)]
     (if clear-candidates
       (do-clear-candidates clear-candidates state)
-      (let [wish-to-descend (if (= y field-height) elem-height 1)
+      (let [wish-to-descend (if (= y field-height) elem-size 1)
             distance (how-much-can-descend wish-to-descend state)]
         (if (pos? distance)
           (->> state (descend distance) (merge-if-needed random-element))
@@ -309,10 +307,9 @@
 (defn rotate-matrix-right [matrix]
   (reverse (apply map list matrix)))
 
-(defn rotate [rotate-fn {{width  :width
-                          height :height
-                          shape  :shape} :element :as state}]
-  (change-state state (assoc state :element {:height width :width height :shape (rotate-fn shape)})))
+(defn rotate [rotate-fn {{elem-size :size
+                          shape     :shape} :element :as state}]
+  (change-state state (assoc state :element {:size elem-size :shape (rotate-fn shape)})))
 
 (defn rotate-right [state]
   (rotate rotate-matrix-right state))
