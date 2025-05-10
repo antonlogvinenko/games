@@ -8,19 +8,19 @@
 ;https://figwheel.org/config-options
 
 (deftest at-test
-  (is (== 42 (t/at [[0 0 0] [0 42 0] [0 0 0]] 1 1)) "get the element"))
+  (is (== 42 (t/at-field [[0 0 0] [0 42 0] [0 0 0]] 1 1)) "get the element"))
 
 (deftest at?-test
-  (is (true? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 1 1)) "element is present")
-  (is (true? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 0 0)) "element is present")
-  (is (true? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 2 2)) "element is present")
+  (is (true? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 1 1)) "element is present")
+  (is (true? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 0 0)) "element is present")
+  (is (true? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 2 2)) "element is present")
 
-  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 3 0)) "element is absent")
-  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 0 3)) "element is absent")
-  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] -1 0)) "element is absent")
-  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 0 -1)) "element is absent")
+  (is (false? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 3 0)) "element is absent")
+  (is (false? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 0 3)) "element is absent")
+  (is (false? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] -1 0)) "element is absent")
+  (is (false? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 0 -1)) "element is absent")
 
-  (is (false? (t/at? [[0 0 0] [0 42 0] [0 0 0]] 3 3)) "element is absent"))
+  (is (false? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 3 3)) "element is absent"))
 
 
 (deftest get-clear-candidates-test

@@ -18,10 +18,12 @@
 
 ;; -- Game state
 (defrecord FieldDiff [x y color])
-(defn at [table x y]
-  (-> table (nth y) (nth x)))
+(defn at-tt [table x y]
+  (-> table (nth y []) (nth x 0)))
+(defn at-field [table x y]
+  (-> table (nth y []) (nth x 1)))
 
-(defn at? [table x y]
+(defn at-field? [table x y]
   (-> table (nth y []) (nth x nil) nil? not))
 
 (defn show-field [field]
@@ -153,7 +155,7 @@
 
 (defn set-color! [refs x y color]
   (gdom/setProperties
-    (at refs x y)
+    (at-field refs x y)
     #js {"style" (props {"border"           "1px solid black"
                          "background-color" ({0 "white" 1 "black"} color)})}))
 
@@ -183,31 +185,29 @@
 
 
 
-;; -- Game logic
+;; Cells incompatibility:
+;;   - the field is surrounded by 1s
+;;   - tetrominos are surrounded by 0s
+;;   - (t, f) = (1, 1) pair at the same idx is not acceptable
+;; This is made so that tetrominos
+;;   - can't overlap with existing structure in the field
+;;   - can go outside the field but only with their empty space
 (defn is-acceptable [{x            :x
                       y            :y
                       field-height :height
-                      field-width  :width
                       tid          :tid
                       tform        :tform
                       field        :field}]
   (let [[tt tsize] (get-tt tid tform)
-        good-cells (for [xi (range 0 tsize)
-                         :let [xg (+ xi x)]
-                         yi (range 0 tsize)
-                         :let [in (at tt xi yi)]
-                         :let [yg (+ yi y)]
-                         :when (< yg field-height)]
-                     (->> [
-                           #(or (>= xg 0) (== 0 in))
-                           #(or (< xg field-width) (== 0 in))
-                           #(or (>= yg 0) (== 0 in))
-                           #(or (= 0 (at tt xi yi))
-                                (= 0 (at field xg yg)))]
-                          (map apply)
-                          (filter false?)
-                          empty?))]
-    (->> good-cells (filter false?) empty?)))
+        cells-acceptability (for [xi (range 0 tsize)
+                                  yi (range 0 tsize)
+                                  :let [xg (+ xi x)
+                                        yg (+ yi y)
+                                        tt-cell (at-tt tt xi yi)
+                                        field-cell (at-field field xg yg)]
+                                  :when (< yg field-height)]
+                              (or (= 0 tt-cell) (= 0 field-cell)))]
+    (reduce #(and %1 %2) cells-acceptability)))
 
 (defn how-much-can-descend [wish-to state]
   (->> wish-to
@@ -227,9 +227,9 @@
   (let [[tt tsize] (get-tt tid tform)
         blocks (for [ye (range tsize)
                      xe (range tsize)
-                     :when (= 1 (at tt xe ye))]
+                     :when (= 1 (at-tt tt xe ye))]
                  [(+ xe x) (+ ye y)])
-        visible-blocks (filter (fn [[x y]] (at? field x y)) blocks)]
+        visible-blocks (filter (fn [[x y]] (at-field? field x y)) blocks)]
     (loop [[[xb yb :as b] & bs] visible-blocks
            field field]
       (if b
@@ -307,10 +307,10 @@
   (change-state state (update state :x inc)))
 
 (defn rotate-right [state]
-  (update state :tform (comp #(mod % 4) inc)))
+  (change-state state (update state :tform (comp #(mod % 4) inc))))
 
 (defn rotate-left [state]
-  (update state :tform (comp #(mod % 4) dec)))
+  (change-state state (update state :tform (comp #(mod % 4) dec))))
 
 (defn complete [state]
   (let [distance (how-much-can-descend 2 state)]
@@ -546,9 +546,6 @@
 (start! default-parameters)
 
 
-;; - fix calling random-element - just return id, this is easier to test
-;; - fix unit tests
-;; - t and left border
 ;; - add rotation system id - formal
 ;; - fix appearance of elements
 ;;
