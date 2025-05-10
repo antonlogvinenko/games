@@ -58,32 +58,32 @@
 
 ;; https://tetris.fandom.com/wiki/Tetromino
 
-(def tetrominos {
-                 ::I [[[0 0 0 0] [0 0 0 0] [1 1 1 1] [0 0 0 0]]
-                      [[0 0 1 0] [0 0 1 0] [0 0 1 0] [0 0 1 0]]
-                      [[0 0 0 0] [1 1 1 1] [0 0 0 0] [0 0 0 0]]
-                      [[0 1 0 0] [0 1 0 0] [0 1 0 0] [0 1 0 0]]]
-                 ::O [[[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]]]
-                 ::T [[[0 0 0] [1 1 1] [0 1 0]]
-                      [[0 1 0] [0 1 1] [0 1 0]]
-                      [[0 1 0] [1 1 1] [0 0 0]]
-                      [[0 1 0] [1 1 0] [0 1 0]]]
-                 ::S [[[0 0 0] [1 1 0] [0 1 1]]
-                      [[0 0 1] [0 1 1] [0 1 0]]
-                      [[1 1 0] [0 1 1] [0 0 0]]
-                      [[0 1 0] [1 1 0] [1 0 0]]]
-                 ::Z [[[0 0 0] [0 1 1] [1 1 0]]
-                      [[0 1 0] [0 1 1] [0 0 1]]
-                      [[0 1 1] [1 1 0] [0 0 0]]
-                      [[1 0 0] [1 1 0] [0 1 0]]]
-                 ::J [[[0 0 0] [1 1 1] [1 0 0]]
-                      [[0 1 0] [0 1 0] [0 1 1]]
-                      [[0 0 1] [1 1 1] [0 0 0]]
-                      [[1 1 0] [0 1 0] [0 1 0]]]
-                 ::L [[[0 0 0] [1 1 1] [0 0 1]]
-                      [[0 1 1] [0 1 0] [0 1 0]]
-                      [[1 0 0] [1 1 1] [0 0 0]]
-                      [[1 1 0] [0 1 0] [1 1 0]]]})
+(def tetrominos
+  {::super {::I [[[0 0 0 0] [0 0 0 0] [1 1 1 1] [0 0 0 0]]
+                 [[0 0 1 0] [0 0 1 0] [0 0 1 0] [0 0 1 0]]
+                 [[0 0 0 0] [1 1 1 1] [0 0 0 0] [0 0 0 0]]
+                 [[0 1 0 0] [0 1 0 0] [0 1 0 0] [0 1 0 0]]]
+            ::O [[[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]]]
+            ::T [[[0 0 0] [1 1 1] [0 1 0]]
+                 [[0 1 0] [0 1 1] [0 1 0]]
+                 [[0 1 0] [1 1 1] [0 0 0]]
+                 [[0 1 0] [1 1 0] [0 1 0]]]
+            ::S [[[0 0 0] [1 1 0] [0 1 1]]
+                 [[0 0 1] [0 1 1] [0 1 0]]
+                 [[1 1 0] [0 1 1] [0 0 0]]
+                 [[0 1 0] [1 1 0] [1 0 0]]]
+            ::Z [[[0 0 0] [0 1 1] [1 1 0]]
+                 [[0 1 0] [0 1 1] [0 0 1]]
+                 [[0 1 1] [1 1 0] [0 0 0]]
+                 [[1 0 0] [1 1 0] [0 1 0]]]
+            ::J [[[0 0 0] [1 1 1] [1 0 0]]
+                 [[0 1 0] [0 1 0] [0 1 1]]
+                 [[0 0 1] [1 1 1] [0 0 0]]
+                 [[1 1 0] [0 1 0] [0 1 0]]]
+            ::L [[[0 0 0] [1 1 1] [0 0 1]]
+                 [[0 1 1] [0 1 0] [0 1 0]]
+                 [[1 0 0] [1 1 1] [0 0 0]]
+                 [[0 1 0] [0 1 0] [1 1 0]]]}})
 
 (def tetromino-names [
                       ::I
@@ -94,22 +94,24 @@
                       ::J
                       ::L])
 
+(def rotation-systems [::super])
+
 (defn element-start-x [field-width element-width]
   (- (int (/ field-width 2)) (int (/ element-width 2))))
 (defn create-empty-matrix [height width]
   (vec (repeat height (vec (repeat width 0)))))
 
-(defn get-tt [id form]
-  (let [tt (-> tetrominos id (nth form))
+(defn get-tt [tsys id form]
+  (let [tt (-> tetrominos tsys id (nth form))
         tsize (count tt)]
     [tt tsize]))
 
 (defn random-element []
   (->> tetromino-names count rand-int (nth tetromino-names)))
 
-(defn init-state [{height :height width :width ticking :ticking} refs]
+(defn init-state [{height :height width :width ticking :ticking tsys :tsys} refs]
   (let [id (random-element)
-        [tt ts] (get-tt id 0)]
+        [tt ts] (get-tt tsys id 0)]
     {:stop    #()
      :height  height
      :width   width
@@ -118,6 +120,7 @@
      :y       height
      :tid     id
      :tform   0
+     :tsys    ::super
      :ticking ticking
      :field   (create-empty-matrix height width)}))
 
@@ -173,7 +176,7 @@
   (set! (.-innerHTML game-container) html-str))
 
 (defn create-parameters [height width ticking]
-  {:height height :width width :ticking ticking})
+  {:height height :width width :ticking ticking :tsys ::super})
 
 (def default-parameters (create-parameters 20 12 2000))
 (defn render-game! [parameters]
@@ -196,9 +199,10 @@
                       y            :y
                       field-height :height
                       tid          :tid
+                      tsys         :tsys
                       tform        :tform
                       field        :field}]
-  (let [[tt tsize] (get-tt tid tform)
+  (let [[tt tsize] (get-tt tsys tid tform)
         cells-acceptability (for [xi (range 0 tsize)
                                   yi (range 0 tsize)
                                   :let [xg (+ xi x)
@@ -222,9 +226,10 @@
 (defn add-element-to-field [{field :field
                              x     :x
                              y     :y
+                             tsys  :tsys
                              tid   :tid
                              tform :tform}]
-  (let [[tt tsize] (get-tt tid tform)
+  (let [[tt tsize] (get-tt tsys tid tform)
         blocks (for [ye (range tsize)
                      xe (range tsize)
                      :when (= 1 (at-tt tt xe ye))]
@@ -238,9 +243,10 @@
 
 (defn merge-if-needed [elem-generator {width  :width
                                        height :height
+                                       tsys   :tsys
                                        :as    state}]
   (let [id (elem-generator)
-        [tt ts] (get-tt id 0)]
+        [tt ts] (get-tt tsys id 0)]
     (if (pos? (how-much-can-descend 1 state))
       state
       (do (merge state {:field (add-element-to-field state)
@@ -282,8 +288,9 @@
                           field-height :height
                           tid          :tid
                           tform        :tform
+                          tsys         :tsys
                           :as          state}]
-  (let [[_ ts] (get-tt tid tform)
+  (let [[_ ts] (get-tt tsys tid tform)
         clear-candidates (get-clear-candidates state)]
     (if clear-candidates
       (do-clear-candidates clear-candidates state)
@@ -546,14 +553,11 @@
 (start! default-parameters)
 
 
-;; 1. add rotation system id - formal
-;;   - state
-;;   - in tetrominos
-;;   - in get-tt
 ;; 2. game tick sync: clearing a level and only THEN the next element?
 ;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
 ;; 3. arrowdown must be handled differently - smooth descend
 ;; 4. game is not over if continuously press arrowdown
+;;
 ;; 5. show next item
 ;; 6. try https://domainlockjs.com
 ;; 7. wall kicks
@@ -561,7 +565,18 @@
 ;; 9. calculating score
 ;; 10. switching levels?
 ;; 11. new game button
+;; 12. actors must return their inbox? => less code
+;; 13. design: web page buttons so you can play it on your phone
+;; 14. controls info
+;; 15. sounds
+;; 16. hardware looking design? generic design
+;; 17. description
+;; 18. SEO
+;; 19. domain name
+;; 20. how to track visitors
 ;;
+;;
+;; - recording states so I can debug
 ;; - protect from copying
 ;;   - https://domainlockjs.com
 ;;   - less direct: set var, not exception
@@ -578,26 +593,11 @@
 ;;   - use sockets https://stackoverflow.com/questions/1660060/how-to-prevent-your-javascript-code-from-being-stolen-copied-and-viewed
 ;;   - !!! You can use an ajax script injection. This is deters theft because the same domain policy which prevents XSS will make the client side script difficult to run elsewhere.
 ;;
-;; - design: web page buttons so you can play it on your phone
-;; - actors must return their inbox? => less code
-;; - controls info
-;; - recording states so i can debug
-;; - color schemes to choose
-;; - sounds
-;; - hardware looking design
-;; - description
-;; - statistics
-
 ;; - check https://www.goodoldtetris.com
-;;
 ;; - icons https://icones.js.org
+;; - color schemes to choose
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
-;; domain name
-;; use the domain name
-;; robots.txt
-;; seo
-;; check how much traffic
 ;;
 ;;
 ;;
