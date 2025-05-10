@@ -56,16 +56,41 @@
 
 ;; https://tetris.fandom.com/wiki/Tetromino
 
-(declare tetrominos)
+(def tetrominos {
+                 ::I [[[0 0 0 0] [0 0 0 0] [1 1 1 1] [0 0 0 0]]
+                      [[0 0 1 0] [0 0 1 0] [0 0 1 0] [0 0 1 0]]
+                      [[0 0 0 0] [1 1 1 1] [0 0 0 0] [0 0 0 0]]
+                      [[0 1 0 0] [0 1 0 0] [0 1 0 0] [0 1 0 0]]]
+                 ::O [[[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]]]
+                 ::T [[[0 0 0] [1 1 1] [0 1 0]]
+                      [[0 1 0] [0 1 1] [0 1 0]]
+                      [[0 1 0] [1 1 1] [0 0 0]]
+                      [[0 1 0] [1 1 0] [0 1 0]]]
+                 ::S [[[0 0 0] [1 1 0] [0 1 1]]
+                      [[0 0 1] [0 1 1] [0 1 0]]
+                      [[1 1 0] [0 1 1] [0 0 0]]
+                      [[0 1 0] [1 1 0] [1 0 0]]]
+                 ::Z [[[0 0 0] [0 1 1] [1 1 0]]
+                      [[0 1 0] [0 1 1] [0 0 1]]
+                      [[0 1 1] [1 1 0] [0 0 0]]
+                      [[1 0 0] [1 1 0] [0 1 0]]]
+                 ::J [[[0 0 0] [1 1 1] [1 0 0]]
+                      [[0 1 0] [0 1 0] [0 1 1]]
+                      [[0 0 1] [1 1 1] [0 0 0]]
+                      [[1 1 0] [0 1 0] [0 1 0]]]
+                 ::L [[[0 0 0] [1 1 1] [0 0 1]]
+                      [[0 1 1] [0 1 0] [0 1 0]]
+                      [[1 0 0] [1 1 1] [0 0 0]]
+                      [[1 1 0] [0 1 0] [1 1 0]]]})
 
 (def tetromino-names [
-                      :I
-                      :O
-                      :T
-                      :S
-                      :Z
-                      :J
-                      :L])
+                      ::I
+                      ::O
+                      ::T
+                      ::S
+                      ::Z
+                      ::J
+                      ::L])
 
 (defn element-start-x [field-width element-width]
   (- (int (/ field-width 2)) (int (/ element-width 2))))
@@ -519,45 +544,21 @@
 
 (start! default-parameters)
 
-(def tetrominos {
-                 :I [[[0 0 0 0] [0 0 0 0] [1 1 1 1] [0 0 0 0]]
-                     [[0 0 1 0] [0 0 1 0] [0 0 1 0] [0 0 1 0]]
-                     [[0 0 0 0] [1 1 1 1] [0 0 0 0] [0 0 0 0]]
-                     [[0 1 0 0] [0 1 0 0] [0 1 0 0] [0 1 0 0]]]
-                 :O [[[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]] [[1 1] [1 1]]]
-                 :T [[[0 0 0] [1 1 1] [0 1 0]]
-                     [[0 1 0] [0 1 1] [0 1 0]]
-                     [[0 1 0] [1 1 1] [0 0 0]]
-                     [[0 1 0] [1 1 0] [0 1 0]]]
-                 :S [[[0 0 0] [1 1 0] [0 1 1]]
-                     [[0 0 1] [0 1 1] [0 1 0]]
-                     [[1 1 0] [0 1 1] [0 0 0]]
-                     [[0 1 0] [1 1 0] [1 0 0]]]
-                 :Z [[[0 0 0] [0 1 1] [1 1 0]]
-                     [[0 1 0] [0 1 1] [0 0 1]]
-                     [[0 1 1] [1 1 0] [0 0 0]]
-                     [[1 0 0] [1 1 0] [0 1 0]]]
-                 :J [[[0 0 0] [1 1 1] [1 0 0]]
-                     [[0 1 0] [0 1 0] [0 1 1]]
-                     [[0 0 1] [1 1 1] [0 0 0]]
-                     [[1 1 0] [0 1 0] [0 1 0]]]
-                 :L [[[0 0 0] [1 1 1] [0 0 1]]
-                     [[0 1 1] [0 1 0] [0 1 0]]
-                     [[1 0 0] [1 1 1] [0 0 0]]
-                     [[1 1 0] [0 1 0] [1 1 0]]]})
 
-
+;; - fix calling random-element - just return id, this is easier to test
 ;; - fix unit tests
+;; - t and left border
 ;; - add rotation system id - formal
-;;
-;; - fix appearing of elements
+;; - fix appearance of elements
 ;;
 ;; - game tick sync: clearing a level and only THEN the next element?
 ;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
 ;; - arrowdown must be handled differently - smooth descend
 ;; - game is not over if continuously press arrowdown
-;; - try https://domainlockjs.com
+;;
 ;;  - show next item
+;;
+;; - try https://domainlockjs.com
 ;;
 ;;  - speed as parameters
 ;;  - calculating score
