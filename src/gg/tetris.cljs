@@ -103,11 +103,11 @@
     [tt tsize]))
 
 (defn random-element []
-  (let [id (->> tetromino-names count rand-int (nth tetromino-names))]
-    [id (nth (get-tt id 1) 1)]))
+  (->> tetromino-names count rand-int (nth tetromino-names)))
 
 (defn init-state [{height :height width :width ticking :ticking} refs]
-  (let [[id ts] (random-element)]
+  (let [id (random-element)
+        [tt ts] (get-tt id 0)]
     {:stop    #()
      :height  height
      :width   width
@@ -239,7 +239,8 @@
 (defn merge-if-needed [elem-generator {width  :width
                                        height :height
                                        :as    state}]
-  (let [[id ts] (elem-generator)]
+  (let [id (elem-generator)
+        [tt ts] (get-tt id 0)]
     (if (pos? (how-much-can-descend 1 state))
       state
       (do (merge state {:field (add-element-to-field state)

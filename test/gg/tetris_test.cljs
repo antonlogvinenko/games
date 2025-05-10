@@ -65,9 +65,9 @@
       "add complex element to the field")
   ;
   (is (= [[0 0 0 0] [0 0 0 0] [0 0 1 1] [0 1 1 0]]
-         (t/add-element-to-field {:x       1 :y 1
-                                  :tid     ::t/Z :tform 0
-                                  :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+         (t/add-element-to-field {:x     1 :y 1
+                                  :tid   ::t/Z :tform 0
+                                  :field [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
       "add complex element to the bigger field"))
 
 
@@ -151,98 +151,98 @@
       "enter rotate left"))
 
 
-;(deftest is-acceptable-test
-;  (is (true? (t/is-acceptable {:x       1 :y 1
-;                               :height  4 :width 4
-;                               :element {:size 2 :shape [[1 1] [1 1]]}
-;                               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "no intersection")
-;
-;  (is (false? (t/is-acceptable {:x       1 :y 1
-;                                :height  4 :width 4
-;                                :element {:size 2 :shape [[1 1] [1 1]]}
-;                                :field   [[0 1 1 0] [0 1 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "intersection")
-;
-;  (is (false? (t/is-acceptable {:x       -1 :y 1
-;                                :height  4 :width 4
-;                                :element {:size 2 :shape [[1 1] [1 1]]}
-;                                :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "moved left too far")
-;
-;  (is (false? (t/is-acceptable {:x       4 :y 1
-;                                :height  4 :width 4
-;                                :element {:size 2 :shape [[1 1] [1 1]]}
-;                                :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "moved right too far")
-;
-;  (is (false? (t/is-acceptable {:x       4 :y -1
-;                                :height  4 :width 4
-;                                :element {:size 2 :shape [[1 1] [1 1]]}
-;                                :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "moved too low"))
+(deftest is-acceptable-test
+  (is (true? (t/is-acceptable {:x      1 :y 1
+                               :height 4 :width 4
+                               :tid    ::t/O :tform 0
+                               :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "no intersection")
+
+  (is (false? (t/is-acceptable {:x      1 :y 1
+                                :height 4 :width 4
+                                :tid    ::t/O :tform 0
+                                :field  [[0 1 1 0] [0 1 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "intersection")
+
+  (is (false? (t/is-acceptable {:x      -1 :y 1
+                                :height 4 :width 4
+                                :tid    ::t/O :tform 0
+                                :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "moved left too far")
+
+  (is (false? (t/is-acceptable {:x      4 :y 1
+                                :height 4 :width 4
+                                :tid    ::t/O :tform 0
+                                :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "moved right too far")
+
+  (is (false? (t/is-acceptable {:x      4 :y -1
+                                :height 4 :width 4
+                                :tid    ::t/O :tform 0
+                                :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "moved too low"))
 
 
-;(deftest how-much-can-descend-test
-;  (is (== 4 (t/how-much-can-descend 100 {:x       1 :y 4
-;                                         :height  4 :width 4
-;                                         :element {:size 2 :shape [[1 1] [1 1]]}
-;                                         :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "descend from start")
-;
-;  (is (== 4 (t/how-much-can-descend 4 {:x       1 :y 4
-;                                       :height  4 :width 4
-;                                       :element {:size 2 :shape [[1 1] [1 1]]}
-;                                       :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "descend from start, real request")
-;
-;  (is (== 2 (t/how-much-can-descend 100 {:x       2 :y 2
-;                                         :height  4 :width 4
-;                                         :element {:size 2 :shape [[1 1] [1 1]]}
-;                                         :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "descend in the middle")
-;
-;  (is (== 1 (t/how-much-can-descend 1 {:x       2 :y 2
-;                                       :height  4 :width 4
-;                                       :element {:size 2 :shape [[1 1] [1 1]]}
-;                                       :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "descend in the middle, real request"))
+(deftest how-much-can-descend-test
+  (is (== 4 (t/how-much-can-descend 100 {:x      1 :y 4
+                                         :height 4 :width 4
+                                         :tid    ::t/O :tform 0
+                                         :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend from start")
+
+  (is (== 4 (t/how-much-can-descend 4 {:x      1 :y 4
+                                       :height 4 :width 4
+                                       :tid    ::t/O :tform 0
+                                       :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend from start, real request")
+
+  (is (== 2 (t/how-much-can-descend 100 {:x      2 :y 2
+                                         :height 4 :width 4
+                                         :tid    ::t/O :tform 0
+                                         :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend in the middle")
+
+  (is (== 1 (t/how-much-can-descend 1 {:x      2 :y 2
+                                       :height 4 :width 4
+                                       :tid    ::t/O :tform 0
+                                       :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "descend in the middle, real request"))
 
 
-;(deftest add-element-to-the-field-test
-;  (is (== [[0 0 0 0] [0 1 1 0] [0 1 1 0] [0 0 0 0]] (t/add-element-to-field {:x       1 :y 1
-;                                                                             :height  4 :width 4
-;                                                                             :element {:size 2 :shape [[1 1] [1 1]]}
-;                                                                             :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "add square")
+(deftest add-element-to-the-field-test
+  (is (== [[0 0 0 0] [0 1 1 0] [0 1 1 0] [0 0 0 0]] (t/add-element-to-field {:x      1 :y 1
+                                                                             :tid    ::t/O :tform 0
+                                                                             :height 4 :width 4
+                                                                             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "add square")
+
+  (is (== [[0 0 0 0] [0 0 1 1] [0 0 1 0] [0 0 1 0]] (t/add-element-to-field {:x      1 :y 1
+                                                                             :height 4 :width 4
+                                                                             :tid    ::t/L :tform 1
+                                                                             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+      "add L"))
 ;
-;  (is (== [[0 0 0 0] [0 0 1 1] [0 0 1 0] [0 0 1 0]] (t/add-element-to-field {:x       1 :y 1
-;                                                                             :height  4 :width 4
-;                                                                             :element {:size 3 :shape [[0 1 1] [0 1 0] [0 1 0]]}
-;                                                                             :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;      "add L"))
-;;
-;(deftest merge-if-needed-test
-;  (let [elem-generator (fn [] {:size 3 :shape [[0 1 1] [0 1 0] [0 1 0]]})]
-;    (is (== {:x       1 :y 1
-;             :height  4 :width 4
-;             :tid ::t/L :tform 0
-;             :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-;            (t/merge-if-needed elem-generator {:x       1 :y 1
-;                                               :height  4 :width 4
-;                                               :element {:size 2 :shape [[1 1] [1 1]]}
-;                                               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;        "not merged")
-;
-;    (is (== {:x       1 :y 4
-;             :height  4 :width 4
-;             :tid ::t/L :tform 0
-;             :field   [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
-;            (t/merge-if-needed elem-generator {:x       1 :y 0
-;                                               :height  4 :width 4
-;                                               :element {:size 2 :shape [[1 1] [1 1]]}
-;                                               :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
-;        "merged")))
+(deftest merge-if-needed-test
+  (let [elem-generator (fn [] ::t/L)]
+    (is (== {:x      1 :y 1
+             :height 4 :width 4
+             :tid    ::t/L :tform 0
+             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+            (t/merge-if-needed elem-generator {:x      1 :y 1
+                                               :height 4 :width 4
+                                               :tid    ::t/L :tform 0
+                                               :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+        "not merged")
+
+    (is (== {:x      1 :y 4
+             :height 4 :width 4
+             :tid    ::t/L :tform 0
+             :field  [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
+            (t/merge-if-needed elem-generator {:x      1 :y 0
+                                               :height 4 :width 4
+                                               :tid    ::t/O :tform 0
+                                               :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+        "merged")))
 
 (deftest descend-test
   (is (== {:x      1 :y 0
@@ -256,18 +256,18 @@
       "descended"))
 
 (deftest change-state-test
-  (let [acceptable-1 {:x       1 :y 1
-                      :height  4 :width 4
-                      :tid ::t/O :tform 0
-                      :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-        acceptable-2 {:x       1 :y 2
-                      :height  4 :width 4
-                      :tid ::t/O :tform 0
-                      :field   [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-        unacceptable {:x       1 :y 1
-                      :height  4 :width 4
-                      :tid ::t/O :tform 0
-                      :field   [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}]
+  (let [acceptable-1 {:x      1 :y 1
+                      :height 4 :width 4
+                      :tid    ::t/O :tform 0
+                      :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        acceptable-2 {:x      1 :y 2
+                      :height 4 :width 4
+                      :tid    ::t/O :tform 0
+                      :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+        unacceptable {:x      1 :y 1
+                      :height 4 :width 4
+                      :tid    ::t/O :tform 0
+                      :field  [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}]
     (is (== acceptable-1 (t/change-state acceptable-1 unacceptable))
         "unacceptable state rejected")
 
