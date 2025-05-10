@@ -546,22 +546,21 @@
 (start! default-parameters)
 
 
-;; - add rotation system id - formal
-;; - fix appearance of elements
-;;
-;; - game tick sync: clearing a level and only THEN the next element?
+;; 1. add rotation system id - formal
+;;   - state
+;;   - in tetrominos
+;;   - in get-tt
+;; 2. game tick sync: clearing a level and only THEN the next element?
 ;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
-;; - arrowdown must be handled differently - smooth descend
-;; - game is not over if continuously press arrowdown
-;;
-;;  - show next item
-;;
-;; - try https://domainlockjs.com
-;;
-;;  - speed as parameters
-;;  - calculating score
-;;  - switching levels?
-;;  - pause the game when the the webpage is left
+;; 3. arrowdown must be handled differently - smooth descend
+;; 4. game is not over if continuously press arrowdown
+;; 5. show next item
+;; 6. try https://domainlockjs.com
+;; 7. wall kicks
+;; 8. pause the game when the webpage is left
+;; 9. calculating score
+;; 10. switching levels?
+;; 11. new game button
 ;;
 ;; - protect from copying
 ;;   - https://domainlockjs.com
@@ -570,7 +569,7 @@
 ;;   - hide reading .location .host - get property via eval?
 ;;   - send js from backend
 ;;   - send js via websockets
-;;   - use hashing for location.host
+;;   - use hashing for .location .host
 ;;   - no lists of hosts
 ;;   - append/prepend random string for hashed/unhashed
 ;;   - indirect result, no direct exceptions
@@ -579,14 +578,11 @@
 ;;   - use sockets https://stackoverflow.com/questions/1660060/how-to-prevent-your-javascript-code-from-being-stolen-copied-and-viewed
 ;;   - !!! You can use an ajax script injection. This is deters theft because the same domain policy which prevents XSS will make the client side script difficult to run elsewhere.
 ;;
-
-
-;; - recording states so i can debug
 ;; - design: web page buttons so you can play it on your phone
 ;; - actors must return their inbox? => less code
 ;; - controls info
+;; - recording states so i can debug
 ;; - color schemes to choose
-;; - new game button
 ;; - sounds
 ;; - hardware looking design
 ;; - description
