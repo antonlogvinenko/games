@@ -39,6 +39,8 @@
 ;; 0 1 2
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
+;;
+(def empty-space-size 6)
 
 (defn indexed [coll]
   (map-indexed vector coll))
@@ -199,7 +201,7 @@
       [:div {:id "game-message"}]
       [:div
        (render-table "field" height width {"margin" "auto"})
-       (render-table "next-elem" 4 4 nil)]))
+       (render-table "next-elem" empty-space-size empty-space-size nil)]))
   [(get-rendered-references! "field" height width)
    (get-rendered-references! "next-elem" height width)])
 
@@ -468,15 +470,15 @@
 ;;    renderer-inbox -> null-inbox
 ;;
 ;;
+;;
+(def next-element-empty-space (repeat empty-space-size (repeat empty-space-size 0)))
 (defn add-element-to-next [elem]
-  (let [d (- 4 (count elem))]
-    (for [yg (range 0 4)]
-      (for [xg (range 0 4)
+  (let [d (- (int (/ empty-space-size 2)) (int (/ (count elem) 2)))]
+    (for [yg (range 0 empty-space-size)]
+      (for [xg (range 0 empty-space-size)
             :let [xi (- xg d)
                   yi (- yg d)]]
         (at-tt elem xi yi)))))
-
-
 
 
 (defn generate-scene [{tt-gen :tt-gen tsys :tsys :as state}]
@@ -545,7 +547,7 @@
            renderer-calculator-ch
            renderer-ch
            {:field     (:field state)
-            :next-elem [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+            :next-elem next-element-empty-space}
            (fn [{{field-1 :field next-elem-1 :next-elem}             :state
                  {field-2 :field next-elem-2 :next-elem :as state-2} :msg}]
              {:msg   {:field     (field-diff field-1 field-2)
