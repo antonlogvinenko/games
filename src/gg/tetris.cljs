@@ -27,10 +27,6 @@
 (defn at-field? [table x y]
   (-> table (nth y []) (nth x nil) nil? not))
 
-(defn show-field [field]
-  (log "The scene is:")
-  (->> field reverse (map (fn [r] (log r))) dorun)
-  field)
 
 ;; State represents UI field in (x,y) coords
 ;;
@@ -54,8 +50,8 @@
   (for [[y [row-a row-b]] (indexed (zip field-a field-b))
         [x [a b]] (indexed (zip row-a row-b))
         :when (not= a b)]
-    (do (show-field field-b)
-        (FieldDiff. x y b))))
+    (FieldDiff. x y b)))
+
 
 ;; https://tetris.fandom.com/wiki/Tetromino
 
@@ -110,21 +106,37 @@
 (defn random-element []
   (->> tetromino-names count rand-int (nth tetromino-names)))
 
-(defn init-state [{height :height width :width ticking :ticking tsys :tsys} refs]
-  (let [id (random-element)
-        [tt ts] (get-tt tsys id 0)]
-    {:stop    #()
-     :height  height
-     :width   width
-     :refs    refs
-     :x       (element-start-x width ts)
-     :y       height
-     :tid     id
-     :tform   0
-     :tsys    ::super
-     :ticking ticking
-     :field   (create-empty-matrix height width)}))
+(defn create-tt-gen []
+  (let [random-elements-stream (repeatedly random-element)]
+    (fn [] random-elements-stream)))
 
+(defn first-gen [gen]
+  (first (gen)))
+
+(defn rest-gen [gen]
+  (let [all (gen)
+        rest-elements (rest all)]
+    (fn [] rest-elements)))
+
+
+
+(defn init-state [{height :height width :width ticking :ticking tsys :tsys} refs next-elem]
+  (let [tt-gen (create-tt-gen)
+        id (first-gen tt-gen)
+        [tt ts] (get-tt tsys id 0)]
+    {:stop      #()
+     :height    height
+     :width     width
+     :refs      refs
+     :next-elem next-elem
+     :x         (element-start-x width ts)
+     :y         height
+     :tid       id
+     :tform     0
+     :tt-gen    (rest-gen tt-gen)
+     :tsys      ::super
+     :ticking   ticking
+     :field     (create-empty-matrix height width)}))
 
 
 ;; - Game UI
@@ -135,31 +147,32 @@
   (->> a-map
        (map (fn [[k v]] (str k ":" v)))
        (str/join "; ")))
-(defn cell-id [y x]
-  (str "cell:" y ":" x))
-(defn render-game-table [{height :height width :width}]
+(defn cell-id [prefix y x]
+  (str prefix ":cell:" y ":" x))
+(defn render-table [id-prefix height width table-props]
   (let [square-px 30
         sizer (fn [items] (str (* items square-px) "px"))
-        table-style (props {"height"          (sizer height)
-                            "width"           (sizer width)
-                            "margin"          "auto"
-                            "border"          "1px solid black"
-                            "border-collapse" "collapse"})
+        table-style (props (merge table-props {"height" (sizer height)
+                                               "width"  (sizer width)
+                                               ;"margin" "auto"
+                                               "border" "1px solid black"}))
+        ;"border-collapse" "collapse"})
         create-row (fn [row] (into [:tr]
-                                   (map (fn [col] [:td {:id (cell-id row col) :style "border: 1px solid"} ""])
+                                   (map (fn [col] [:td {:id (cell-id id-prefix row col) :style "border: 1px solid"} ""])
                                         (range width))))]
     [:div (into [:table {:style table-style}]
                 (map create-row (reverse (range height))))]))
 
-(defn get-rendered-references! [{height :height width :width}]
+
+(defn get-rendered-references! [prefix height width]
   (for [y (range height)]
     (for [x (range width)]
-      (gdom/getElement (cell-id y x)))))
+      (gdom/getElement (cell-id prefix y x)))))
 
 
-(defn set-color! [refs x y color]
+(defn set-color! [target x y color]
   (gdom/setProperties
-    (at-field refs x y)
+    (at-field target x y)
     #js {"style" (props {"border"           "1px solid black"
                          "background-color" ({0 "white" 1 "black"} color)})}))
 
@@ -180,12 +193,15 @@
   {:height height :width width :ticking ticking :tsys ::super})
 
 (def default-parameters (create-parameters 20 12 2000))
-(defn render-game! [parameters]
+(defn render-game! [{height :height width :width :as parameters}]
   (set-game-html!
     (hiccups/html
       [:div {:id "game-message"}]
-      (render-game-table parameters)))
-  (get-rendered-references! parameters))
+      [:div
+       (render-table "field" height width {"margin" "auto"})
+       (render-table "next-elem" 4 4 nil)]))
+  [(get-rendered-references! "field" height width)
+   (get-rendered-references! "next-elem" height width)])
 
 
 
@@ -242,19 +258,21 @@
         (recur bs (assoc-in field [yb xb] 1))
         field))))
 
-(defn merge-if-needed [elem-generator {width  :width
-                                       height :height
-                                       tsys   :tsys
-                                       :as    state}]
-  (let [id (elem-generator)
+(defn merge-if-needed [{width  :width
+                        height :height
+                        tsys   :tsys
+                        tt-gen :tt-gen
+                        :as    state}]
+  (let [id (first-gen tt-gen)
         [tt ts] (get-tt tsys id 0)]
     (if (pos? (how-much-can-descend 1 state))
       state
-      (do (merge state {:field (add-element-to-field state)
-                        :x     (element-start-x width ts)
-                        :y     height
-                        :tid   id
-                        :tform 0})))))
+      (do (merge state {:field  (add-element-to-field state)
+                        :x      (element-start-x width ts)
+                        :y      height
+                        :tid    id
+                        :tt-gen (rest-gen tt-gen)
+                        :tform  0})))))
 
 (defn game-over [{stop :stop :as state}]
   (stop)
@@ -298,7 +316,7 @@
       (let [wish-to-descend (if (= y field-height) ts 1)
             distance (how-much-can-descend wish-to-descend state)]
         (if (pos? distance)
-          (->> state (descend distance) (merge-if-needed random-element))
+          (->> state (descend distance) (merge-if-needed))
           (game-over state))))))
 
 
@@ -342,10 +360,10 @@
 (defn rotate-left-action [state]
   (with-wall-kicks state rotate-left))
 
-(defn complete-action [next-element-fn state]
+(defn complete-action [state]
   (let [distance (how-much-can-descend 2 state)]
     (if (pos? distance)
-      (->> state (descend distance) (merge-if-needed next-element-fn))
+      (->> state (descend distance) (merge-if-needed))
       (state))))
 
 
@@ -355,7 +373,7 @@
    ::move-right   move-right-action
    ::rotate-right rotate-right-action
    ::rotate-left  rotate-left-action
-   ::complete     (partial complete-action random-element)})
+   ::complete     complete-action})
 
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
@@ -450,9 +468,20 @@
 ;;    renderer-inbox -> null-inbox
 ;;
 ;;
-(defn generate-scene [state]
-  (log "Generated scene")
-  (show-field (add-element-to-field state)))
+(defn add-element-to-next [elem]
+  (let [d (- 4 (count elem))]
+    (for [yg (range 0 4)]
+      (for [xg (range 0 4)
+            :let [xi (- xg d)
+                  yi (- yg d)]]
+        (at-tt elem xi yi)))))
+
+
+
+
+(defn generate-scene [{tt-gen :tt-gen tsys :tsys :as state}]
+  {:field     (add-element-to-field state)
+   :next-elem (add-element-to-next (first (get-tt tsys (first-gen tt-gen) 0)))})
 
 (defonce game (atom {:stop #()}))
 (defn stop! []
@@ -471,6 +500,11 @@
       (throw (js/Error. "Oops!")))))
 
 
+(defn update-colors [target diff]
+  (dorun (for [{x :x y :y color :color} diff]
+           (do (log "Setting color" x y color)
+               (set-color! target x y color)))))
+
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
@@ -484,8 +518,8 @@
         scene-ch (default-ch)
         chord-ch (default-ch)
 
-        refs (render-game! parameters)
-        state (init-state parameters refs)
+        [field, next-elem] (render-game! parameters)
+        state (init-state parameters field next-elem)
         state (assoc state :stop (fn []
                                    (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch scene-ch
                                          renderer-calculator-ch renderer-ch]
@@ -501,26 +535,30 @@
            renderer-ch
            null-inbox
            {}
-           (fn [{cmds :msg}] (dorun (for [{x :x y :y color :color} cmds]
-                                      (do (log "Setting color" x y color)
-                                          (set-color! (:refs state) x y color))))))
+           (fn [{{field-diff     :field
+                  next-elem-diff :next-elem} :msg}]
+             (update-colors field field-diff)
+             (update-colors next-elem next-elem-diff)))
 
     (actor "renderer calculator"
            false
            renderer-calculator-ch
            renderer-ch
-           (:field state)
-           (fn [{last-displayed-state :state new-state-to-display :msg}]
-             {:msg   (field-diff last-displayed-state new-state-to-display)
-              :state new-state-to-display}))
+           {:field     (:field state)
+            :next-elem [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
+           (fn [{{field-1 :field next-elem-1 :next-elem}             :state
+                 {field-2 :field next-elem-2 :next-elem :as state-2} :msg}]
+             {:msg   {:field     (field-diff field-1 field-2)
+                      :next-elem (field-diff next-elem-1 next-elem-2)}
+              :state state-2}))
 
     (actor "scene generator"
            false
            scene-ch
            renderer-calculator-ch
            {}
-           (fn [{msg :msg}]
-             (let [scene (generate-scene msg)]
+           (fn [{state :msg}]
+             (let [scene (generate-scene state)]
                {:msg scene})))
 
     (actor "action handler"
@@ -577,8 +615,12 @@
 
 
 ;; 4. show next item
+;;   - render the next element visually "in the middle"?
+;;   - move the next elem table to right top
+;;
 ;; 1. game tick sync: clearing a level and only THEN the next element?
 ;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
+;;    - should be fixed by merging on the next descend - after the one that puts the block to the bottom
 ;; 2. arrowdown must be handled differently - smooth descend
 ;; 3. game is not over if continuously press arrowdown
 ;; 5. try https://domainlockjs.com

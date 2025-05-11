@@ -83,7 +83,7 @@
   (is (== "" (t/props {}))))
 
 (deftest cell-id-test
-  (is (== "cell:1:2" (t/cell-id 1 2))))
+  (is (== "field:cell:1:2" (t/cell-id "field" 1 2))))
 
 (deftest field-diff
   (is (empty?
@@ -247,25 +247,29 @@
       "add L"))
 ;
 (deftest merge-if-needed-test
-  (let [elem-generator (fn [] ::t/L)]
+  (let [elem-generator (fn [] [::t/L])]
     (is (== {:x      1 :y 1
              :height 4 :width 4
              :tsys   ::t/super :tid ::t/L :tform 0
              :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-            (t/merge-if-needed elem-generator {:x      1 :y 1
-                                               :height 4 :width 4
-                                               :tsys   ::t/super :tid ::t/L :tform 0
-                                               :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+            (select-keys (t/merge-if-needed {:x      1 :y 1
+                                             :height 4 :width 4
+                                             :tt-gen elem-generator
+                                             :tsys   ::t/super :tid ::t/L :tform 0
+                                             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]})
+                         [:x :y :height :width :tsys :tid :tform :field]))
         "not merged")
 
     (is (== {:x      1 :y 4
              :height 4 :width 4
              :tsys   ::t/super :tid ::t/L :tform 0
              :field  [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
-            (t/merge-if-needed elem-generator {:x      1 :y 0
-                                               :height 4 :width 4
-                                               :tsys   ::t/super :tid ::t/O :tform 0
-                                               :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))
+            (select-keys (t/merge-if-needed {:x      1 :y 0
+                                             :height 4 :width 4
+                                             :tt-gen elem-generator
+                                             :tsys   ::t/super :tid ::t/O :tform 0
+                                             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]})
+                         [:x :y :height :width :tsys :tid :tform :field]))
         "merged")))
 
 (deftest descend-test
@@ -364,12 +368,13 @@
     (is (== moved (t/action-handler to-move ::t/move-left)))))
 
 (deftest complete-test
-  (let [next-element-fn (fn [] ::t/O)
+  (let [next-element-fn (fn [] [::t/O])
         to-complete {:x      1 :y 1
                      :height 4 :width 4
                      :tsys   ::t/super :tid ::t/L :tform 0
+                     :tt-gen next-element-fn
                      :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-        completed (t/complete-action next-element-fn to-complete)]
+        completed (t/complete-action to-complete)]
     (is (== {:x 1 :y 4 :field [[0 1 1 1] [0 0 0 1] [0 0 0 0] [0 0 0 0]]}
             (select-keys completed [:x :y :field])))))
 
