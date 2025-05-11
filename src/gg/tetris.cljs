@@ -342,10 +342,10 @@
 (defn rotate-left-action [state]
   (with-wall-kicks state rotate-left))
 
-(defn complete-action [state]
+(defn complete-action [next-element-fn state]
   (let [distance (how-much-can-descend 2 state)]
     (if (pos? distance)
-      (->> state (descend distance) (merge-if-needed random-element))
+      (->> state (descend distance) (merge-if-needed next-element-fn))
       (state))))
 
 
@@ -355,7 +355,7 @@
    ::move-right   move-right-action
    ::rotate-right rotate-right-action
    ::rotate-left  rotate-left-action
-   ::complete     complete-action})
+   ::complete     (partial complete-action random-element)})
 
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
@@ -576,26 +576,25 @@
 (start! default-parameters)
 
 
-;; 2. game tick sync: clearing a level and only THEN the next element?
+;; 4. show next item
+;; 1. game tick sync: clearing a level and only THEN the next element?
 ;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
-;; 3. arrowdown must be handled differently - smooth descend
-;; 4. game is not over if continuously press arrowdown
-;;
-;; 5. show next item
-;; 6. try https://domainlockjs.com
-;; 8. pause the game when the webpage is left
-;; 9. calculating score
-;; 10. switching levels?
-;; 11. new game button
-;; 12. actors must return their inbox? => less code
-;; 13. design: web page buttons so you can play it on your phone
-;; 14. controls info
-;; 15. sounds
-;; 16. hardware looking design? generic design
-;; 17. description
-;; 18. SEO
-;; 19. domain name
-;; 20. how to track visitors
+;; 2. arrowdown must be handled differently - smooth descend
+;; 3. game is not over if continuously press arrowdown
+;; 5. try https://domainlockjs.com
+;; 6. pause the game when the webpage is left
+;; 7. calculating score
+;; 8. switching levels?
+;; 9. new game button
+;; 10. actors must return their inbox? => less code
+;; 11. design: web page buttons so you can play it on your phone
+;; 12. controls info
+;; 13. sounds
+;; 14. hardware looking design? generic design
+;; 15. description
+;; 16. SEO
+;; 17. domain name
+;; 18. how to track visitors
 ;;
 ;;
 ;; - recording states so I can debug

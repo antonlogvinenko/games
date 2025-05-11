@@ -364,11 +364,12 @@
     (is (== moved (t/action-handler to-move ::t/move-left)))))
 
 (deftest complete-test
-  (let [to-complete {:x      1 :y 1
+  (let [next-element-fn (fn [] ::t/O)
+        to-complete {:x      1 :y 1
                      :height 4 :width 4
                      :tsys   ::t/super :tid ::t/L :tform 0
                      :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-        completed (t/complete-action to-complete)]
+        completed (t/complete-action next-element-fn to-complete)]
     (is (== {:x 1 :y 4 :field [[0 1 1 1] [0 0 0 1] [0 0 0 0] [0 0 0 0]]}
             (select-keys completed [:x :y :field])))))
 
