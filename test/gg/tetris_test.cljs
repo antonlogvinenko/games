@@ -307,10 +307,10 @@
                :height 4 :width 4
                :tsys   ::t/super :tid ::t/O :tform 0
                :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
-    (is (== moved (t/move-left to-move))
+    (is (== moved (t/move-left-action to-move))
         "can move left")
 
-    (is (== moved (t/move-left moved))
+    (is (== moved (t/move-left-action moved))
         "cannot move left")))
 ;
 (deftest move-right-test
@@ -322,10 +322,10 @@
                :height 4 :width 4
                :tsys   ::t/super :tid ::t/O :tform 0
                :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
-    (is (== moved (t/move-right to-move))
+    (is (== moved (t/move-right-action to-move))
         "can move right")
 
-    (is (== moved (t/move-right moved))
+    (is (== moved (t/move-right-action moved))
         "cannot move right")))
 ;
 (deftest rotate-right-test
@@ -337,7 +337,7 @@
                  :height 4 :width 4
                  :tsys   ::t/super :tid ::t/L :tform 1
                  :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
-    (is (== rotated (t/rotate-right to-rotate))
+    (is (== rotated (t/rotate-right-action to-rotate))
         "rotate right")))
 
 (deftest rotate-left-test
@@ -349,7 +349,7 @@
                  :height 4 :width 4
                  :tsys   ::t/super :tid ::t/L :tform 3
                  :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}]
-    (is (== rotated (t/rotate-left to-rotate))
+    (is (== rotated (t/rotate-left-action to-rotate))
         "rotate left")))
 
 (deftest action-handler-test
@@ -368,7 +368,7 @@
                      :height 4 :width 4
                      :tsys   ::t/super :tid ::t/L :tform 0
                      :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-        completed (t/complete to-complete)]
+        completed (t/complete-action to-complete)]
     (is (== {:x 1 :y 4 :field [[0 1 1 1] [0 0 0 1] [0 0 0 0] [0 0 0 0]]}
             (select-keys completed [:x :y :field])))))
 

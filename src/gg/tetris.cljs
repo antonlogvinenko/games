@@ -20,7 +20,8 @@
 (defrecord FieldDiff [x y color])
 (defn at-tt [table x y]
   (-> table (nth y []) (nth x 0)))
-(defn at-field [table x y]
+(defn at-field
+  [table x y]
   (-> table (nth y []) (nth x 1)))
 
 (defn at-field? [table x y]
@@ -308,18 +309,40 @@
     current-state))
 
 (defn move-left [state]
-  (change-state state (update state :x dec)))
+  (update state :x dec))
 
 (defn move-right [state]
-  (change-state state (update state :x inc)))
+  (update state :x inc))
+
+(defn mod4 [op]
+  (comp #(mod % 4) op))
 
 (defn rotate-right [state]
-  (change-state state (update state :tform (comp #(mod % 4) inc))))
+  (update state :tform (mod4 inc)))
 
 (defn rotate-left [state]
-  (change-state state (update state :tform (comp #(mod % 4) dec))))
+  (update state :tform (mod4 dec)))
 
-(defn complete [state]
+(defn move-left-action [state]
+  (->> state move-left (change-state state)))
+
+(defn move-right-action [state]
+  (->> state move-right (change-state state)))
+
+(defn with-wall-kicks [state rotate-fn]
+  (let [rotated (rotate-fn state)]
+    (->> [rotated (move-left state) (move-right state)]
+         (filter is-acceptable)
+         first
+         (change-state state))))
+
+(defn rotate-right-action [state]
+  (with-wall-kicks state rotate-right))
+
+(defn rotate-left-action [state]
+  (with-wall-kicks state rotate-left))
+
+(defn complete-action [state]
   (let [distance (how-much-can-descend 2 state)]
     (if (pos? distance)
       (->> state (descend distance) (merge-if-needed random-element))
@@ -328,11 +351,11 @@
 
 (def handlers
   {:game-tick     game-tick-handler
-   ::move-left    move-left
-   ::move-right   move-right
-   ::rotate-right rotate-right
-   ::rotate-left  rotate-left
-   ::complete     complete})
+   ::move-left    move-left-action
+   ::move-right   move-right-action
+   ::rotate-right rotate-right-action
+   ::rotate-left  rotate-left-action
+   ::complete     complete-action})
 
 (defn action-handler [state msg]
   (let [new-state ((get handlers msg identity) state)]
@@ -560,7 +583,6 @@
 ;;
 ;; 5. show next item
 ;; 6. try https://domainlockjs.com
-;; 7. wall kicks
 ;; 8. pause the game when the webpage is left
 ;; 9. calculating score
 ;; 10. switching levels?
