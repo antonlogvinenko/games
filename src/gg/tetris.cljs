@@ -198,10 +198,14 @@
 (defn render-game! [{height :height width :width :as parameters}]
   (set-game-html!
     (hiccups/html
-      [:div {:id "game-message"}]
       [:div
-       (render-table "field" height width {"margin" "auto"})
-       (render-table "next-elem" empty-space-size empty-space-size nil)]))
+       [:table {:width "800px" :style "margin: auto"}
+        [:tr
+         [:td {:style (props {"vertical-align" "top" "text-align" "right"})}
+          [:div {:id "game-message"}]]
+         [:td (render-table "field" height width {"margin" "auto"})]
+         [:td {:style (props {"vertical-align" "top"})}
+          (render-table "next-elem" empty-space-size empty-space-size nil)]]]]))
   [(get-rendered-references! "field" height width)
    (get-rendered-references! "next-elem" height width)])
 
@@ -367,7 +371,6 @@
     (if (pos? distance)
       (->> state (descend distance) (merge-if-needed))
       (state))))
-
 
 (def handlers
   {:game-tick     game-tick-handler
@@ -616,15 +619,12 @@
 (start! default-parameters)
 
 
-;; 4. show next item
-;;   - render the next element visually "in the middle"?
-;;   - move the next elem table to right top
+;; 1. show next item
+;;   - render the next element visually "in the middle" - check other tetris games
+;; 2. game tick sync - should be able to move left before merge
+;; 3. arrowdown must be handled differently - smooth descend
+;; 4. game is not over if continuously press arrowdown
 ;;
-;; 1. game tick sync: clearing a level and only THEN the next element?
-;;    - must be able to move left/right in the end before it is merge - MERGE IS DONE ON A SEPARATE TICK!!!
-;;    - should be fixed by merging on the next descend - after the one that puts the block to the bottom
-;; 2. arrowdown must be handled differently - smooth descend
-;; 3. game is not over if continuously press arrowdown
 ;; 5. try https://domainlockjs.com
 ;; 6. pause the game when the webpage is left
 ;; 7. calculating score
@@ -634,7 +634,7 @@
 ;; 11. design: web page buttons so you can play it on your phone
 ;; 12. controls info
 ;; 13. sounds
-;; 14. hardware looking design? generic design
+;; 14. hardware looking design? generic design?
 ;; 15. description
 ;; 16. SEO
 ;; 17. domain name
