@@ -499,7 +499,8 @@
   (let [host (-> (get-location) (str/split ":") first md5)
         allowed-hosts [
                        "8561520c9e13eeb5b228e32c163800c1"
-                       "db6d8dce28da168c3546ca7358c91d7a"]]
+                       "db6d8dce28da168c3546ca7358c91d7a"
+                       "0807f8526a95151dd52eef93cdc47876"]]
     (when
       (not-any? #{host} allowed-hosts)
       (throw (js/Error. "Oops!")))))
