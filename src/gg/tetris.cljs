@@ -264,21 +264,19 @@
         (recur bs (assoc-in field [yb xb] 1))
         field))))
 
-(defn merge-if-needed [{width  :width
-                        height :height
-                        tsys   :tsys
-                        tt-gen :tt-gen
-                        :as    state}]
+(defn merge-element [{width    :width
+                      height :height
+                      tsys   :tsys
+                      tt-gen :tt-gen
+                      :as    state}]
   (let [id (first-gen tt-gen)
         [tt ts] (get-tt tsys id 0)]
-    (if (pos? (how-much-can-descend 1 state))
-      state
-      (do (merge state {:field  (add-element-to-field state)
-                        :x      (element-start-x width ts)
-                        :y      height
-                        :tid    id
-                        :tt-gen (rest-gen tt-gen)
-                        :tform  0})))))
+    (merge state {:field  (add-element-to-field state)
+                  :x      (element-start-x width ts)
+                  :y      height
+                  :tid    id
+                  :tt-gen (rest-gen tt-gen)
+                  :tform  0})))
 
 (defn game-over [{stop :stop :as state}]
   (stop)
@@ -322,8 +320,12 @@
       (let [wish-to-descend (if (= y field-height) ts 1)
             distance (how-much-can-descend wish-to-descend state)]
         (if (pos? distance)
-          (->> state (descend distance) (merge-if-needed))
-          (game-over state))))))
+          (descend distance state)
+          (if (== field-height y)
+            (game-over state)
+            (merge-element state)))))))
+
+
 
 
 
@@ -369,8 +371,8 @@
 (defn complete-action [state]
   (let [distance (how-much-can-descend 2 state)]
     (if (pos? distance)
-      (->> state (descend distance) (merge-if-needed))
-      (state))))
+      (descend distance state)
+      state)))
 
 (def handlers
   {:game-tick     game-tick-handler
@@ -619,27 +621,34 @@
 
 (start! default-parameters)
 
-
-;; 1. show next item
-;;   - render the next element visually "in the middle" - check other tetris games
-;; 2. game tick sync - should be able to move left before merge
-;; 3. arrowdown must be handled differently - smooth descend
-;; 4. game is not over if continuously press arrowdown
+;; - fix unit tests
+;; - merge and generate next item must be a single action upon descend - if merged then instantly generated
+;; - rotate during element generation (or merge) fails the game
+;; 
+;; - game is not over if continuously press arrowdown
 ;;
-;; 5. try https://domainlockjs.com
-;; 6. pause the game when the webpage is left
-;; 7. calculating score
-;; 8. switching levels?
-;; 9. new game button
-;; 10. actors must return their inbox? => less code
-;; 11. design: web page buttons so you can play it on your phone
-;; 12. controls info
-;; 13. sounds
-;; 14. hardware looking design? generic design?
-;; 15. description
-;; 16. SEO
-;; 17. domain name
-;; 18. how to track visitors
+;; - show next item
+;;   - render the next element visually "in the middle" - check other tetris gamesx
+;;
+;; - arrowdown must be handled differently - smooth descend
+;; - pause the game when the webpage is left
+;;
+;; - try https://domainlockjs.com
+;; - log errors so i can debug what i see
+;; - domain name
+;; - SEO
+;;
+;; - calculating score
+;; - switching levels?
+;; - new game button
+;; - actors must return their inbox? => less code
+;; - design: web page buttons so you can play it on your phone
+;; - controls info
+;; - sounds
+;; - hardware looking design? generic design?
+;; - description
+;; - SEO
+;; - how to track visitors
 ;;
 ;;
 ;; - recording states so I can debug

@@ -252,11 +252,11 @@
              :height 4 :width 4
              :tsys   ::t/super :tid ::t/L :tform 0
              :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-            (select-keys (t/merge-if-needed {:x      1 :y 1
-                                             :height 4 :width 4
-                                             :tt-gen elem-generator
-                                             :tsys   ::t/super :tid ::t/L :tform 0
-                                             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]})
+            (select-keys (t/merge-element {:x        1 :y 1
+                                           :height 4 :width 4
+                                           :tt-gen elem-generator
+                                           :tsys   ::t/super :tid ::t/L :tform 0
+                                           :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]})
                          [:x :y :height :width :tsys :tid :tform :field]))
         "not merged")
 
@@ -264,11 +264,11 @@
              :height 4 :width 4
              :tsys   ::t/super :tid ::t/L :tform 0
              :field  [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
-            (select-keys (t/merge-if-needed {:x      1 :y 0
-                                             :height 4 :width 4
-                                             :tt-gen elem-generator
-                                             :tsys   ::t/super :tid ::t/O :tform 0
-                                             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]})
+            (select-keys (t/merge-element {:x        1 :y 0
+                                           :height 4 :width 4
+                                           :tt-gen elem-generator
+                                           :tsys   ::t/super :tid ::t/O :tform 0
+                                           :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]})
                          [:x :y :height :width :tsys :tid :tform :field]))
         "merged")))
 
