@@ -155,9 +155,6 @@
 (defn calculate-y-start [height tsys id]
   (let [[tt ts] (get-tt tsys id 0)
         [yb yt] (get-filled for-ys ts tt)]
-    (println "yb:" yb)
-    (println "height:" height)
-    (println "(- height 1 yb):"(- height 1 yb))
     ; split the field in half, fill the left part with the "least half"
     ; -yb, so that at least one row is visible
     (- height 1 yb)))
@@ -171,9 +168,7 @@
 
 (defn init-state [{height :height width :width ticking :ticking tsys :tsys} refs next-elem]
   (let [tt-gen (create-tt-gen)
-        id (first-gen tt-gen)
-        [tt ts] (get-tt tsys id 0)]
-    (println "init-state called")
+        id (first-gen tt-gen)]
     {:stop      #()
      :height    height
      :width     width
