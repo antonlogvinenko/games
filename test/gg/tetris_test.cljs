@@ -248,19 +248,19 @@
 ;
 (deftest merge-if-needed-test
   (let [elem-generator (fn [] [::t/L])]
-    (is (== {:x      1 :y 1
-             :height 4 :width 4
-             :tsys   ::t/super :tid ::t/L :tform 0
-             :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
-            (select-keys (t/merge-element {:x        1 :y 1
+    (is (== (select-keys (t/merge-element {:x        1 :y 1
                                            :height 4 :width 4
                                            :tt-gen elem-generator
                                            :tsys   ::t/super :tid ::t/L :tform 0
                                            :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]})
-                         [:x :y :height :width :tsys :tid :tform :field]))
+                         [:x :y :height :width :tsys :tid :tform :field])
+            {:x      1 :y 2
+             :height 4 :width 4
+             :tsys   ::t/super :tid ::t/L :tform 0
+             :field  [[0 0 0 0] [0 0 0 0] [0 1 1 1] [0 0 0 1]]})
         "not merged")
 
-    (is (== {:x      1 :y 4
+    (is (== {:x      1 :y 2
              :height 4 :width 4
              :tsys   ::t/super :tid ::t/L :tform 0
              :field  [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}
@@ -369,12 +369,13 @@
 
 (deftest complete-test
   (let [next-element-fn (fn [] [::t/O])
-        to-complete {:x      1 :y 1
+        to-complete {:x      0 :y 4
                      :height 4 :width 4
                      :tsys   ::t/super :tid ::t/L :tform 0
                      :tt-gen next-element-fn
                      :field  [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}
         completed (t/complete-action to-complete)]
-    (is (== {:x 1 :y 4 :field [[0 1 1 1] [0 0 0 1] [0 0 0 0] [0 0 0 0]]}
-            (select-keys completed [:x :y :field])))))
+    (is (== (select-keys completed [:x :y :field])
+            {:x 0 :y 2 :field [[0 0 0 0] [0 0 0 0] [0 0 0 0] [0 0 0 0]]}))))
+
 

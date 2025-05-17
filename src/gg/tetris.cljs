@@ -273,7 +273,7 @@
         [tt ts] (get-tt tsys id 0)]
     (merge state {:field  (add-element-to-field state)
                   :x      (element-start-x width ts)
-                  :y      height
+                  :y      (- height 2)
                   :tid    id
                   :tt-gen (rest-gen tt-gen)
                   :tform  0})))
@@ -306,7 +306,13 @@
              (when (< high-y height) (subvec field (inc high-y) height))
              (create-empty-matrix cleared width))))))
 
-
+;; a game tick does one of three:
+;; - descend
+;; - game over
+;; - merge + clear line if present? + descend next element + generate new next tt
+;;
+;; important: merge is done separately from the previous descend because the element
+;; must be able to move left and right before the last descend and the merge
 (defn game-tick-handler [{y            :y
                           field-height :height
                           tid          :tid
@@ -314,19 +320,17 @@
                           tsys         :tsys
                           :as          state}]
   (let [[_ ts] (get-tt tsys tid tform)
-        clear-candidates (get-clear-candidates state)]
-    (if clear-candidates
-      (do-clear-candidates clear-candidates state)
-      (let [wish-to-descend (if (= y field-height) ts 1)
-            distance (how-much-can-descend wish-to-descend state)]
-        (if (pos? distance)
-          (descend distance state)
-          (if (== field-height y)
-            (game-over state)
-            (merge-element state)))))))
-
-
-
+        wish-to-descend (if (= y field-height) ts 1)
+        distance (how-much-can-descend wish-to-descend state)]
+    (if (pos? distance)
+      (descend distance state)
+      (if (== field-height y)
+        (game-over state)
+        (let [merged-state (merge-element state)
+              clear-candidates (get-clear-candidates merged-state)]
+          (if clear-candidates
+            (do-clear-candidates clear-candidates merged-state)
+            merged-state))))))
 
 
 (defn change-state [current-state new-state]
@@ -473,9 +477,6 @@
 ;;    renderer-calculator-inbox -> renderer-inbox
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
-;;
-;;
-;;
 (def next-element-empty-space (repeat empty-space-size (repeat empty-space-size 0)))
 (defn add-element-to-next [elem]
   (let [d (- (int (/ empty-space-size 2)) (int (/ (count elem) 2)))]
@@ -621,18 +622,23 @@
 
 (start! default-parameters)
 
+
+;; - apply--if-accetpable for complete-action and other functions?
 ;; - fix unit tests
-;; - merge and generate next item must be a single action upon descend - if merged then instantly generated
+;;
 ;; - rotate during element generation (or merge) fails the game
-;; 
 ;; - game is not over if continuously press arrowdown
 ;;
 ;; - show next item
-;;   - render the next element visually "in the middle" - check other tetris gamesx
-;;
+;;   - render the next element visually "in the middle" - check other tetris games
 ;; - arrowdown must be handled differently - smooth descend
 ;; - pause the game when the webpage is left
 ;;
+;;
+;;
+;;
+;;
+;; - compare to another game that descend vs game-over vs merge clean lines show next gen next is correct
 ;; - try https://domainlockjs.com
 ;; - log errors so i can debug what i see
 ;; - domain name
