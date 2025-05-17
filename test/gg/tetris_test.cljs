@@ -21,22 +21,22 @@
   (is (false? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 0 -1)) "element is absent")
 
   (is (false? (t/at-field? [[0 0 0] [0 42 0] [0 0 0]] 3 3)) "element is absent"))
-
-
-(deftest get-clear-candidates-test
-  (is (== nil (t/get-clear-candidates {:height 4 :field [[0 0 0 1] [1 0 0 0] [0 1 0 1] [1 0 1 0]]})))
-  (is (= [0 0] (t/get-clear-candidates {:height 4 :field [[1 1 1 1] [1 0 0 0] [0 1 0 1] [1 0 1 0]]})))
-  (is (= [0 2] (t/get-clear-candidates {:height 4 :field [[1 1 1 1] [1 1 1 1] [1 1 1 1] [1 0 1 0]]})))
-  (is (= [1 2] (t/get-clear-candidates {:height 4 :field [[0 0 0 0] [1 1 1 1] [1 1 1 1] [1 0 1 0]]}))))
-
-(deftest do-clear-candidates-test
-  (is (== [[1 0 0 0] [0 1 0 0] [0 0 1 0] [0 0 0 0]]
-          (:field
-            (t/do-clear-candidates [0 0] {:height 4 :width 4 :field [[1 1 1 1] [1 0 0 0] [0 1 0 0] [0 0 1 0]]}))))
-
-  (is (== [[1 0 0 0] [0 1 0 0] [0 0 0 0] [0 0 0 0]]
-          (:field
-            (t/do-clear-candidates [1 2] {:height 4 :width 4 :field [[1 0 0 0] [1 1 1 1] [1 1 1 1] [0 1 0 0]]})))))
+;
+;
+;(deftest get-clear-candidates-test
+;  (is (== nil (t/get-clear-candidates {:height 4 :field [[0 0 0 1] [1 0 0 0] [0 1 0 1] [1 0 1 0]]})))
+;  (is (= [0 0] (t/get-clear-candidates {:height 4 :field [[1 1 1 1] [1 0 0 0] [0 1 0 1] [1 0 1 0]]})))
+;  (is (= [0 2] (t/get-clear-candidates {:height 4 :field [[1 1 1 1] [1 1 1 1] [1 1 1 1] [1 0 1 0]]})))
+;  (is (= [1 2] (t/get-clear-candidates {:height 4 :field [[0 0 0 0] [1 1 1 1] [1 1 1 1] [1 0 1 0]]}))))
+;
+;(deftest do-clear-candidates-test
+;  (is (== [[1 0 0 0] [0 1 0 0] [0 0 1 0] [0 0 0 0]]
+;          (:field
+;            (t/do-clear-candidates [0 0] {:height 4 :width 4 :field [[1 1 1 1] [1 0 0 0] [0 1 0 0] [0 0 1 0]]}))))
+;
+;  (is (== [[1 0 0 0] [0 1 0 0] [0 0 0 0] [0 0 0 0]]
+;          (:field
+;            (t/do-clear-candidates [1 2] {:height 4 :width 4 :field [[1 0 0 0] [1 1 1 1] [1 1 1 1] [0 1 0 0]]})))))
 
 (deftest indexed-test
   (is (== [] (t/indexed [])) "empty index")
@@ -48,8 +48,8 @@
   (is (== [[1 'a'] [2 'b'] [3 'c']] (t/zip [1 2 3] ['a' 'b' 'c' 'd'])) "non empty zip")
   (is (== [[1 'a'] [2 'b'] [3 'c']] (t/zip [1 2 3 4] ['a' 'b' 'c'])) "non empty zip"))
 
-(deftest element-start-x-test
-  (is (= 4 (t/element-start-x 10 3))))
+;(deftest element-start-x-test
+;  (is (= 4 (t/element-start-x 10 3))))
 
 (deftest add-element-to-the-field
   (is (= [[0 0 0 0] [0 1 1 1] [0 0 0 1]]

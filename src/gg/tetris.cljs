@@ -57,6 +57,11 @@
 
 ;; https://tetris.fandom.com/wiki/Tetromino
 
+;; 0 1 2 3 4      5 6 7 8 9
+;; 4
+;;
+;; 3 - O
+
 (def tetrominos
   {::super {::I [[[0 0 0 0] [0 0 0 0] [1 1 1 1] [0 0 0 0]]
                  [[0 0 1 0] [0 0 1 0] [0 0 1 0] [0 0 1 0]]
@@ -95,11 +100,6 @@
 
 (def rotation-systems [::super])
 
-(defn element-start-x [field-width element-width]
-  (- (int (/ field-width 2)) (int (/ element-width 2))))
-(defn create-empty-matrix [height width]
-  (vec (repeat height (vec (repeat width 0)))))
-
 (defn get-tt [tsys id form]
   (let [tt (-> tetrominos tsys id (nth form))
         tsize (count tt)]
@@ -122,21 +122,70 @@
 
 
 
+
+
+
+(defn filled? [x]
+  (== x 1))
+
+(defn for-xs [tt x]
+  (fn [y]
+    (at-tt tt x y)))
+
+(defn for-ys [tt y]
+  (fn [x]
+    (at-tt tt x y)))
+
+(defn get-filled [for-dimension ts tt]
+  ((juxt first last)
+   (for [d (range 0 ts)
+         :let [filled (->> (range 0 ts)
+                           (map (for-dimension tt d))
+                           (filter filled?)
+                           empty?
+                           not)]
+         :when filled]
+     d)))
+
+(defn calculate-x-start [width tsys id]
+  (let [[tt ts] (get-tt tsys id 0)
+        [xl xr] (get-filled for-xs ts tt)]
+    (- (int (/ width 2)) (int (/ (+ xr 1 (- xl)) 2)))))
+
+(defn calculate-y-start [height tsys id]
+  (let [[tt ts] (get-tt tsys id 0)
+        [yb yt] (get-filled for-ys ts tt)]
+    (println "yb:" yb)
+    (println "height:" height)
+    (println "(- height 1 yb):"(- height 1 yb))
+    ; split the field in half, fill the left part with the "least half"
+    ; -yb, so that at least one row is visible
+    (- height 1 yb)))
+
+(defn create-empty-matrix [height width]
+  (vec (repeat height (vec (repeat width 0)))))
+
+
+
+
+
 (defn init-state [{height :height width :width ticking :ticking tsys :tsys} refs next-elem]
   (let [tt-gen (create-tt-gen)
         id (first-gen tt-gen)
         [tt ts] (get-tt tsys id 0)]
+    (println "init-state called")
     {:stop      #()
      :height    height
      :width     width
      :refs      refs
      :next-elem next-elem
-     :x         (element-start-x width ts)
-     :y         height
+     :x         (calculate-x-start width tsys id)
+     :y         (inc (calculate-y-start height tsys id))
      :tid       id
      :tform     0
      :tt-gen    (rest-gen tt-gen)
      :tsys      ::super
+     :game-over false
      :ticking   ticking
      :field     (create-empty-matrix height width)}))
 
@@ -194,7 +243,7 @@
 (defn create-parameters [height width ticking]
   {:height height :width width :ticking ticking :tsys ::super})
 
-(def default-parameters (create-parameters 20 12 2000))
+(def default-parameters (create-parameters 20 10 2000))
 (defn render-game! [{height :height width :width :as parameters}]
   (set-game-html!
     (hiccups/html
@@ -264,21 +313,10 @@
         (recur bs (assoc-in field [yb xb] 1))
         field))))
 
-(defn merge-element [{width    :width
-                      height :height
-                      tsys   :tsys
-                      tt-gen :tt-gen
-                      :as    state}]
-  (let [id (first-gen tt-gen)
-        [tt ts] (get-tt tsys id 0)]
-    (merge state {:field  (add-element-to-field state)
-                  :x      (element-start-x width ts)
-                  :y      (- height 2)
-                  :tid    id
-                  :tt-gen (rest-gen tt-gen)
-                  :tform  0})))
+(defn merge-element [state]
+  (merge state {:field (add-element-to-field state)}))
 
-(defn game-over [{stop :stop :as state}]
+(defn game-over! [{stop :stop :as state}]
   (stop)
   (game-over-message!)
   state)
@@ -294,44 +332,52 @@
        seq
        (#(when % ((juxt first last) %)))))
 
-(defn do-clear-candidates [[low-y high-y] {height :height
-                                           width  :width
-                                           field  :field
-                                           :as    state}]
-  (let [cleared (inc (- high-y low-y))]
-    (assoc state
-      :field
-      (vec (concat
-             (when (pos? low-y) (subvec field 0 low-y))
-             (when (< high-y height) (subvec field (inc high-y) height))
-             (create-empty-matrix cleared width))))))
+(defn do-clear-candidates [{height :height
+                            width  :width
+                            field  :field
+                            :as    state}]
+  (if-let [[low-y high-y] (get-clear-candidates state)]
+    (let [cleared (inc (- high-y low-y))]
+      (assoc state
+        :field
+        (vec (concat
+               (when (pos? low-y) (subvec field 0 low-y))
+               (when (< high-y height) (subvec field (inc high-y) height))
+               (create-empty-matrix cleared width)))))
+    state))
+
+
+
+(defn next-or-game-over! [{width  :width
+                           height :height
+                           tsys   :tsys
+                           tt-gen :tt-gen
+                           :as    state}]
+  (let [id (first-gen tt-gen)
+        next-tt-gen (rest-gen tt-gen)
+        new-state (merge state {:x      (calculate-x-start width tsys id)
+                                :y      (calculate-y-start height tsys id)
+                                :tid    id
+                                :tt-gen next-tt-gen
+                                :tform  0})]
+    (if (is-acceptable new-state)
+      new-state
+      (game-over! state))))
 
 ;; a game tick does one of three:
 ;; - descend
 ;; - game over
 ;; - merge + clear line if present? + descend next element + generate new next tt
-;;
 ;; important: merge is done separately from the previous descend because the element
 ;; must be able to move left and right before the last descend and the merge
-(defn game-tick-handler [{y            :y
-                          field-height :height
-                          tid          :tid
-                          tform        :tform
-                          tsys         :tsys
-                          :as          state}]
-  (let [[_ ts] (get-tt tsys tid tform)
-        wish-to-descend (if (= y field-height) ts 1)
-        distance (how-much-can-descend wish-to-descend state)]
+(defn game-tick-handler [state]
+  (let [distance (how-much-can-descend 1 state)]
     (if (pos? distance)
       (descend distance state)
-      (if (== field-height y)
-        (game-over state)
-        (let [merged-state (merge-element state)
-              clear-candidates (get-clear-candidates merged-state)]
-          (if clear-candidates
-            (do-clear-candidates clear-candidates merged-state)
-            merged-state))))))
-
+      (-> state
+          merge-element
+          do-clear-candidates
+          next-or-game-over!))))
 
 (defn try-new-state [current-state new-state]
   (if (is-acceptable new-state)
@@ -623,14 +669,17 @@
 (start! default-parameters)
 
 
+;; - check if in game over elements are overlapped in the very end?
+;; - fix unit tests
 ;; - rotate during element generation (or merge) fails the game
+;; - showing the next element at -2? -3? need to fix that
 ;; - game is not over if continuously press arrowdown
+;;
 ;;
 ;; - show next item
 ;;   - render the next element visually "in the middle" - check other tetris games
 ;; - arrowdown must be handled differently - smooth descend
 ;; - pause the game when the webpage is left
-;;
 ;;
 ;;
 ;; - unit tests: eval first to see it in report
