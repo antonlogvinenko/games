@@ -296,10 +296,10 @@
                       :height 4 :width 4
                       :tsys   ::t/super :tid ::t/O :tform 0
                       :field  [[0 1 1 0] [0 1 1 0] [0 0 0 0] [0 0 0 0]]}]
-    (is (== acceptable-1 (t/change-state acceptable-1 unacceptable))
+    (is (== acceptable-1 (t/try-new-state acceptable-1 unacceptable))
         "unacceptable state rejected")
 
-    (is (== acceptable-2 (t/change-state acceptable-1 acceptable-2))
+    (is (== acceptable-2 (t/try-new-state acceptable-1 acceptable-2))
         "new acceptable state accepted")))
 ;
 (deftest move-left-test

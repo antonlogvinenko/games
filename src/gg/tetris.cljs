@@ -333,7 +333,7 @@
             merged-state))))))
 
 
-(defn change-state [current-state new-state]
+(defn try-new-state [current-state new-state]
   (if (is-acceptable new-state)
     new-state
     current-state))
@@ -354,17 +354,17 @@
   (update state :tform (mod4 dec)))
 
 (defn move-left-action [state]
-  (->> state move-left (change-state state)))
+  (->> state move-left (try-new-state state)))
 
 (defn move-right-action [state]
-  (->> state move-right (change-state state)))
+  (->> state move-right (try-new-state state)))
 
 (defn with-wall-kicks [state rotate-fn]
   (let [rotated (rotate-fn state)]
     (->> [rotated (move-left state) (move-right state)]
          (filter is-acceptable)
          first
-         (change-state state))))
+         (try-new-state state))))
 
 (defn rotate-right-action [state]
   (with-wall-kicks state rotate-right))
@@ -623,9 +623,6 @@
 (start! default-parameters)
 
 
-;; - apply--if-accetpable for complete-action and other functions?
-;; - fix unit tests
-;;
 ;; - rotate during element generation (or merge) fails the game
 ;; - game is not over if continuously press arrowdown
 ;;
@@ -636,7 +633,7 @@
 ;;
 ;;
 ;;
-;;
+;; - unit tests: eval first to see it in report
 ;;
 ;; - compare to another game that descend vs game-over vs merge clean lines show next gen next is correct
 ;; - try https://domainlockjs.com
