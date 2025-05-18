@@ -39,7 +39,6 @@
 ;; 0 1 2
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
-;;
 (def empty-space-size 6)
 
 (defn indexed [coll]
@@ -56,12 +55,6 @@
 
 
 ;; https://tetris.fandom.com/wiki/Tetromino
-
-;; 0 1 2 3 4      5 6 7 8 9
-;; 4
-;;
-;; 3 - O
-
 (def tetrominos
   {::super {::I [[[0 0 0 0] [0 0 0 0] [1 1 1 1] [0 0 0 0]]
                  [[0 0 1 0] [0 0 1 0] [0 0 1 0] [0 0 1 0]]
@@ -101,6 +94,7 @@
 (def rotation-systems [::super])
 
 (defn get-tt [tsys id form]
+  (println "id is " id)
   (let [tt (-> tetrominos tsys id (nth form))
         tsize (count tt)]
     [tt tsize]))
@@ -175,6 +169,7 @@
      :refs      refs
      :next-elem next-elem
      :x         (calculate-x-start width tsys id)
+     ;; inc-ed so that it is displayed on first :descend event
      :y         (inc (calculate-y-start height tsys id))
      :tid       id
      :tform     0
@@ -366,6 +361,7 @@
 ;; important: merge is done separately from the previous descend because the element
 ;; must be able to move left and right before the last descend and the merge
 (defn game-tick-handler [state]
+  (println "tid in state" (:tid state))
   (let [distance (how-much-can-descend 1 state)]
     (if (pos? distance)
       (descend distance state)
@@ -402,10 +398,10 @@
 
 (defn with-wall-kicks [state rotate-fn]
   (let [rotated (rotate-fn state)]
-    (->> [rotated (move-left state) (move-right state)]
+    ;; current state is the last one since no states might be acceptable
+    (->> [rotated (move-left rotated) (move-right rotated) state]
          (filter is-acceptable)
-         first
-         (try-new-state state))))
+         first)))
 
 (defn rotate-right-action [state]
   (with-wall-kicks state rotate-right))
@@ -664,20 +660,16 @@
 (start! default-parameters)
 
 
+;; - add unit tests for: next-or-game-over!
 ;; - check if in game over elements are overlapped in the very end?
-;; - fix unit tests
-;; - rotate during element generation (or merge) fails the game
-;; - showing the next element at -2? -3? need to fix that
+;;
 ;; - game is not over if continuously press arrowdown
-;;
-;;
+;; - arrowdown must be handled differently - smooth descend
 ;; - show next item
 ;;   - render the next element visually "in the middle" - check other tetris games
-;; - arrowdown must be handled differently - smooth descend
 ;; - pause the game when the webpage is left
+;; - game over must be declared earlier?
 ;;
-;;
-;; - unit tests: eval first to see it in report
 ;;
 ;; - compare to another game that descend vs game-over vs merge clean lines show next gen next is correct
 ;; - try https://domainlockjs.com
