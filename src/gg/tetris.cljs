@@ -94,7 +94,6 @@
 (def rotation-systems [::super])
 
 (defn get-tt [tsys id form]
-  (println "id is " id)
   (let [tt (-> tetrominos tsys id (nth form))
         tsize (count tt)]
     [tt tsize]))
@@ -191,7 +190,7 @@
 (defn cell-id [prefix y x]
   (str prefix ":cell:" y ":" x))
 (defn render-table [id-prefix height width table-props]
-  (let [square-px 30
+  (let [square-px 25
         sizer (fn [items] (str (* items square-px) "px"))
         table-style (props (merge table-props {"height" (sizer height)
                                                "width"  (sizer width)
@@ -234,7 +233,7 @@
   {:height height :width width :ticking ticking :tsys ::super})
 
 (def default-parameters (create-parameters 20 10 2000))
-(defn render-game! [{height :height width :width :as parameters}]
+(defn render-game! [{height :height width :width}]
   (set-game-html!
     (hiccups/html
       [:div
@@ -352,7 +351,7 @@
                                 :tform  0})]
     (if (is-acceptable new-state)
       new-state
-      (game-over! state))))
+      nil)))
 
 ;; a game tick does one of three:
 ;; - descend
@@ -361,14 +360,14 @@
 ;; important: merge is done separately from the previous descend because the element
 ;; must be able to move left and right before the last descend and the merge
 (defn game-tick-handler [state]
-  (println "tid in state" (:tid state))
   (let [distance (how-much-can-descend 1 state)]
     (if (pos? distance)
       (descend distance state)
-      (-> state
-          merge-element
-          do-clear-candidates
-          next-or-game-over!))))
+      (let [new-state (-> state
+                          merge-element
+                          do-clear-candidates
+                          next-or-game-over!)]
+        (if new-state new-state (game-over! state))))))
 
 (defn try-new-state [current-state new-state]
   (if (is-acceptable new-state)
@@ -660,37 +659,34 @@
 (start! default-parameters)
 
 
-;; - add unit tests for: next-or-game-over!
-;; - check if in game over elements are overlapped in the very end?
+;; - buy domain name: retrogames.com
+;; - setup domain name on github pages
+;; - apply https://domainlockjs.com
+;; - basic SEO
 ;;
-;; - game is not over if continuously press arrowdown
+;; Feautres
+;; - mobile version is very important - size and buttons for actions
+;; - controls info
+;; - new game button
+;; - design: web page buttons so you can play it on your phone
+;;   - hardware looking design? generic design?
+;; - description
+;; - sounds
+;; - visual effects
+;; - calculating score
+;; - switching levels?
+;;
+;; Bugs
+;; - check if in game over elements are overlapped in the very end?
 ;; - arrowdown must be handled differently - smooth descend
-;; - show next item
-;;   - render the next element visually "in the middle" - check other tetris games
+;; - render the next element visually "in the middle" - check other tetris games
 ;; - pause the game when the webpage is left
 ;; - game over must be declared earlier?
 ;;
-;;
-;; - compare to another game that descend vs game-over vs merge clean lines show next gen next is correct
-;; - try https://domainlockjs.com
-;; - log errors so i can debug what i see
-;; - domain name
-;; - SEO
-;;
-;; - calculating score
-;; - switching levels?
-;; - new game button
 ;; - actors must return their inbox? => less code
-;; - design: web page buttons so you can play it on your phone
-;; - controls info
-;; - sounds
-;; - hardware looking design? generic design?
-;; - description
-;; - SEO
+
+
 ;; - how to track visitors
-;;
-;;
-;; - recording states so I can debug
 ;; - protect from copying
 ;;   - https://domainlockjs.com
 ;;   - less direct: set var, not exception
