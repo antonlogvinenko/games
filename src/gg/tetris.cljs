@@ -258,10 +258,10 @@
          [:td [:table {:width "280px" :style "margin: auto"}
                [:tr
                 [:td {:id "move-left-btn" :style (button-props {"font-size" "35px"})} "&larr;"]
-                [:td {:id "move-right-btn" :style (button-props {"font-size" "35px"})} "&rarr;"]
-                [:td {:id "complete-btn" :style (button-props {"font-size" "40px"})} "&#8609;"]
                 [:td {:id "rotate-left-btn" :style (button-props {"font-size" "45px"})} "&#10226;"]
-                [:td {:id "rotate-right-btn" :style (button-props {"font-size" "45px"})} "&#10227;"]]]]
+                [:td {:id "complete-btn" :style (button-props {"font-size" "30px"})} "&darr;"]
+                [:td {:id "rotate-right-btn" :style (button-props {"font-size" "45px"})} "&#10227;"]
+                [:td {:id "move-right-btn" :style (button-props {"font-size" "35px"})} "&rarr;"]]]]
          [:td]]]]))
   [(get-rendered-references! "field" height width)
    (get-rendered-references! "next-elem" next-item-height next-item-width)])
