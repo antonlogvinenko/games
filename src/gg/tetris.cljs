@@ -116,8 +116,6 @@
 
 
 
-
-
 (defn filled? [x]
   (== x 1))
 
@@ -154,8 +152,6 @@
 
 (defn create-empty-matrix [height width]
   (vec (repeat height (vec (repeat width 0)))))
-
-
 
 
 
@@ -237,10 +233,12 @@
   (set-game-html!
     (hiccups/html
       [:div
-       [:table {:width "800px" :style "margin: auto"}
+       [:table {:width "300px" :style "margin: auto"}
         [:tr
-         [:td {:style (props {"vertical-align" "top" "text-align" "right"})}
+         [:td {:style (props {"text-align" "center"})}
           [:div {:id "game-message"}]]
+         [:td]]
+        [:tr
          [:td (render-table "field" height width {"margin" "auto"})]
          [:td {:style (props {"vertical-align" "top"})}
           (render-table "next-elem" empty-space-size empty-space-size nil)]]]]))
@@ -665,7 +663,10 @@
 ;; - basic SEO
 ;;
 ;; Feautres
-;; - mobile version is very important - size and buttons for actions
+;; - mobile version is very important
+;;   - move game status to the top
+;;   - size to fit the screen
+;;   - buttons for actions
 ;; - controls info
 ;; - new game button
 ;; - design: web page buttons so you can play it on your phone
