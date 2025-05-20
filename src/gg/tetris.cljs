@@ -39,7 +39,7 @@
 ;; 0 1 2
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
-(def empty-space-size 6)
+(def empty-space-size 4)
 
 (defn indexed [coll]
   (map-indexed vector coll))
