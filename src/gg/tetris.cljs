@@ -232,7 +232,8 @@
 (defn button-props [m]
   (props
     (merge m
-           {"text-align"          "center"
+           {"touch-action"        "none"
+            "text-align"          "center"
             "-moz-user-select"    "-moz-none"
             "-khtml-user-select"  "none"
             "-webkit-user-select" "none"
@@ -498,7 +499,7 @@
                       [[] "s"]              ::complete
                       [[] "d"]              ::move-right
 
-                      [[] " "]               ::complete
+                      [[] " "]              ::complete
 
                       [[] "arrowup"]        ::rotate-right
                       [["shift"] "arrowup"] ::rotate-left
@@ -570,11 +571,12 @@
                (set-color! target x y color)))))
 
 (defn create-button-listener [action-ch]
-  (gevents/listen (gdom/getElement "move-left-btn") "click" #(put! action-ch ::move-left))
-  (gevents/listen (gdom/getElement "move-right-btn") "click" #(put! action-ch ::move-right))
-  (gevents/listen (gdom/getElement "rotate-left-btn") "click" #(put! action-ch ::rotate-left))
-  (gevents/listen (gdom/getElement "rotate-right-btn") "click" #(put! action-ch ::rotate-right))
-  (gevents/listen (gdom/getElement "complete-btn") "click" #(put! action-ch ::complete)))
+  (doseq [[name event] {"move-left-btn"    ::move-left
+                        "move-right-btn"   ::move-right
+                        "rotate-left-btn"  ::rotate-left
+                        "rotate-right-btn" ::rotate-right
+                        "complete-btn"     ::complete}]
+    (gevents/listen (gdom/getElement name) "click" #(put! action-ch event))))
 
 
 (defn start! [parameters]
