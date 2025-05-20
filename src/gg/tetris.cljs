@@ -39,7 +39,8 @@
 ;; 0 1 2
 ;; ... is stored like this:
 ;; [[0 1 2] [3 4 5] [6 7 8]]
-(def empty-space-size 4)
+(def next-item-height 2)
+(def next-item-width 4)
 
 (defn indexed [coll]
   (map-indexed vector coll))
@@ -241,9 +242,9 @@
         [:tr
          [:td (render-table "field" height width {"margin" "auto"})]
          [:td {:style (props {"vertical-align" "top"})}
-          (render-table "next-elem" empty-space-size empty-space-size nil)]]]]))
+          (render-table "next-elem" next-item-height next-item-width nil)]]]]))
   [(get-rendered-references! "field" height width)
-   (get-rendered-references! "next-elem" height width)])
+   (get-rendered-references! "next-elem" next-item-height next-item-width)])
 
 
 
@@ -511,15 +512,15 @@
 ;;    renderer-calculator-inbox -> renderer-inbox
 ;; renderer:
 ;;    renderer-inbox -> null-inbox
-(def next-element-empty-space (repeat empty-space-size (repeat empty-space-size 0)))
+(def next-element-empty-space (repeat next-item-height (repeat next-item-width 0)))
 (defn add-element-to-next [elem]
-  (let [d (- (int (/ empty-space-size 2)) (int (/ (count elem) 2)))]
-    (for [yg (range 0 empty-space-size)]
-      (for [xg (range 0 empty-space-size)
-            :let [xi (- xg d)
-                  yi (- yg d)]]
-        (at-tt elem xi yi)))))
-
+  (let [ts (count elem)
+        [xl xr] (get-filled for-xs ts elem)
+        [yb yt] (get-filled for-ys ts elem)]
+    ;; + next-item-* so that 2x4 is always filled with 0 or 1 so that the diff can be calculated
+    (for [y (range yb (max (inc yt) (+ next-item-height yb)))]
+      (for [x (range xl (max (inc xr) (+ next-item-width xl)))]
+        (at-tt elem x y)))))
 
 (defn generate-scene [{tt-gen :tt-gen tsys :tsys :as state}]
   {:field     (add-element-to-field state)
