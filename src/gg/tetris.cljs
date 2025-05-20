@@ -557,7 +557,7 @@
   (let [host (-> (get-location) (str/split ":") first md5)
         allowed-hosts [
                        "8561520c9e13eeb5b228e32c163800c1"
-                       "21d8122e057d0a9d12aa5721e4bc15ca"
+                       "1669c40770a55e175923e6c5ed064cd0"
                        "db6d8dce28da168c3546ca7358c91d7a"
                        "0807f8526a95151dd52eef93cdc47876"]]
     (when
