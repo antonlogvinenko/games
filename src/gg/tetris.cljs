@@ -257,12 +257,11 @@
         [:tr
          [:td [:table {:width "280px" :style "margin: auto"}
                [:tr
-                [:td {:id "move-left-btn" :style (button-props {"font-size" "35px"})} "&larr;"]
+                [:td {:id "move-left-btn" :style (button-props {"font-size" "37px"})} "&larr;"]
                 [:td {:id "rotate-left-btn" :style (button-props {"font-size" "45px"})} "&#10226;"]
-                [:td {:id "complete-btn" :style (button-props {"font-size" "30px"})} "&darr;"]
                 [:td {:id "rotate-right-btn" :style (button-props {"font-size" "45px"})} "&#10227;"]
-                [:td {:id "move-right-btn" :style (button-props {"font-size" "35px"})} "&rarr;"]]]]
-         [:td]]]]))
+                [:td {:id "move-right-btn" :style (button-props {"font-size" "37px"})} "&rarr;"]]]]
+         [:td {:id "complete-btn" :style (button-props {"font-size" "30px" "font-weight" "normal"})} "&darr;"]]]]))
   [(get-rendered-references! "field" height width)
    (get-rendered-references! "next-elem" next-item-height next-item-width)])
 
@@ -558,6 +557,7 @@
   (let [host (-> (get-location) (str/split ":") first md5)
         allowed-hosts [
                        "8561520c9e13eeb5b228e32c163800c1"
+                       "21d8122e057d0a9d12aa5721e4bc15ca"
                        "db6d8dce28da168c3546ca7358c91d7a"
                        "0807f8526a95151dd52eef93cdc47876"]]
     (when
@@ -689,15 +689,13 @@
 (start! default-parameters)
 
 
-
+;; - :complete button - move separately to the right column
 ;; - buy domain name: retrogames.com
 ;; - setup domain name on github pages
 ;; - apply https://domainlockjs.com
 ;; - basic SEO
 ;;
 ;; Feautres
-;; - mobile version is very important
-;;   - buttons for actions: left right drop rotateleft rotateright
 ;; - controls info
 ;; - new game button
 ;; - design: web page buttons so you can play it on your phone
@@ -711,13 +709,11 @@
 ;; Bugs
 ;; - check if in game over elements are overlapped in the very end?
 ;; - arrowdown must be handled differently - smooth descend
-;; - render the next element visually " in the middle " - check other tetris games
 ;; - pause the game when the webpage is left
 ;; - game over must be declared earlier?
 ;;
+;;
 ;; - actors must return their inbox? => less code
-
-
 ;; - how to track visitors
 ;; - protect from copying
 ;;   - https://domainlockjs.com
