@@ -229,6 +229,16 @@
 (defn create-parameters [height width ticking]
   {:height height :width width :ticking ticking :tsys ::super})
 
+(defn button-props [m]
+  (props
+    (merge m
+           {"text-align"          "center"
+            "-moz-user-select"    "-moz-none"
+            "-khtml-user-select"  "none"
+            "-webkit-user-select" "none"
+            "-o-user-select"      "none"
+            "user-select"         "none"})))
+
 (def default-parameters (create-parameters 20 10 2000))
 (defn render-game! [{height :height width :width}]
   (set-game-html!
@@ -246,13 +256,12 @@
         [:tr
          [:td [:table {:width "280px" :style "margin: auto"}
                [:tr
-                [:td {:style (props {"text-align" "center" "font-size" "35px"})} "&larr;"]
-                [:td {:style (props {"text-align" "center" "font-size" "35px"})} "&rarr;"]
-                [:td {:style (props {"text-align" "center" "font-size" "40px"})} "&#8609;"]
-                [:td {:style (props {"text-align" "center" "font-size" "45px"})} "&#10226;"]
-                [:td {:style (props {"text-align" "center" "font-size" "45px"})} "&#10227;"]]]]
+                [:td {:id "move-left-btn" :style (button-props {"font-size" "35px"})} "&larr;"]
+                [:td {:id "move-right-btn" :style (button-props {"font-size" "35px"})} "&rarr;"]
+                [:td {:id "complete-btn" :style (button-props {"font-size" "40px"})} "&#8609;"]
+                [:td {:id "rotate-left-btn" :style (button-props {"font-size" "45px"})} "&#10226;"]
+                [:td {:id "rotate-right-btn" :style (button-props {"font-size" "45px"})} "&#10227;"]]]]
          [:td]]]]))
-
   [(get-rendered-references! "field" height width)
    (get-rendered-references! "next-elem" next-item-height next-item-width)])
 
@@ -436,6 +445,7 @@
     (log "New coords" (:x new-state) (:y new-state))
     new-state))
 
+
 (defn listen [down-listener up-listener]
   (gevents/listen js/document "keydown" down-listener)
   (gevents/listen js/document "keyup" up-listener))
@@ -488,7 +498,7 @@
                       [[] "s"]              ::complete
                       [[] "d"]              ::move-right
 
-                      [[] " "]              ::complete
+                      [[] " "]               ::complete
 
                       [[] "arrowup"]        ::rotate-right
                       [["shift"] "arrowup"] ::rotate-left
@@ -559,6 +569,14 @@
            (do (log "Setting color" x y color)
                (set-color! target x y color)))))
 
+(defn create-button-listener [action-ch]
+  (gevents/listen (gdom/getElement "move-left-btn") "click" #(put! action-ch ::move-left))
+  (gevents/listen (gdom/getElement "move-right-btn") "click" #(put! action-ch ::move-right))
+  (gevents/listen (gdom/getElement "rotate-left-btn") "click" #(put! action-ch ::rotate-left))
+  (gevents/listen (gdom/getElement "rotate-right-btn") "click" #(put! action-ch ::rotate-right))
+  (gevents/listen (gdom/getElement "complete-btn") "click" #(put! action-ch ::complete)))
+
+
 (defn start! [parameters]
   (stop!)
   (let [timed-ch-ctrl (default-ch)
@@ -573,13 +591,14 @@
         chord-ch (default-ch)
 
         [field, next-elem] (render-game! parameters)
+
         state (init-state parameters field next-elem)
         state (assoc state :stop (fn []
                                    (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch scene-ch
                                          renderer-calculator-ch renderer-ch]
                                         (map (fn [ch] (put! ch :quit)))
                                         dorun)))]
-
+    (create-button-listener action-ch)
     (game-started-message!)
 
     (verification)
@@ -668,6 +687,7 @@
 (start! default-parameters)
 
 
+
 ;; - buy domain name: retrogames.com
 ;; - setup domain name on github pages
 ;; - apply https://domainlockjs.com
@@ -689,7 +709,7 @@
 ;; Bugs
 ;; - check if in game over elements are overlapped in the very end?
 ;; - arrowdown must be handled differently - smooth descend
-;; - render the next element visually "in the middle" - check other tetris games
+;; - render the next element visually " in the middle " - check other tetris games
 ;; - pause the game when the webpage is left
 ;; - game over must be declared earlier?
 ;;
@@ -737,7 +757,7 @@
 ;	- different types of access checks in different places
 ;
 ;3. based on user's time
-;	- same methods but "js works only until may 31 this year" - and somehow update on redeploy
+;	- same methods but " js works only until may 31 this year " - and somehow update on redeploy
 ;	- web pages auto reload themselves
 ;4. do request to backend on front (with website's url)
 ;	- backend checks from what site the query came, and gives bad uids
