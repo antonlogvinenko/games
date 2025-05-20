@@ -242,7 +242,17 @@
         [:tr
          [:td (render-table "field" height width {"margin" "auto"})]
          [:td {:style (props {"vertical-align" "top"})}
-          (render-table "next-elem" next-item-height next-item-width nil)]]]]))
+          (render-table "next-elem" next-item-height next-item-width nil)]]
+        [:tr
+         [:td [:table {:width "280px" :style "margin: auto"}
+               [:tr
+                [:td {:style (props {"text-align" "center" "font-size" "35px"})} "&larr;"]
+                [:td {:style (props {"text-align" "center" "font-size" "35px"})} "&rarr;"]
+                [:td {:style (props {"text-align" "center" "font-size" "40px"})} "&#8609;"]
+                [:td {:style (props {"text-align" "center" "font-size" "45px"})} "&#10226;"]
+                [:td {:style (props {"text-align" "center" "font-size" "45px"})} "&#10227;"]]]]
+         [:td]]]]))
+
   [(get-rendered-references! "field" height width)
    (get-rendered-references! "next-elem" next-item-height next-item-width)])
 
@@ -665,9 +675,7 @@
 ;;
 ;; Feautres
 ;; - mobile version is very important
-;;   - move game status to the top
-;;   - size to fit the screen
-;;   - buttons for actions
+;;   - buttons for actions: left right drop rotateleft rotateright
 ;; - controls info
 ;; - new game button
 ;; - design: web page buttons so you can play it on your phone
