@@ -688,9 +688,7 @@
 
 (start! default-parameters)
 
-;; - rename fuckery.js to lock.js
-;; - deploy to respect lock.js
-;; - deploy to deploy lock.js
+;; - deploy with copying lock.js
 ;; - redeploy, make sure it all works properly
 ;; - basic SEO
 ;;
@@ -711,6 +709,7 @@
 ;; - pause the game when the webpage is left
 ;; - game over must be declared earlier?
 ;;
+;; https://domainlockjs.com
 ;;
 ;; - actors must return their inbox? => less code
 ;; - how to track visitors
