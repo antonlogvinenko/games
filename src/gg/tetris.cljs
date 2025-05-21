@@ -461,7 +461,7 @@
 ;; if msg-out is nil, the message is not sent to channel, only recur is performed
 ;; current state of the actor is replaced with the state that the function returns
 (defn actor [id logging inbox outbox state fn]
-  (println "Starting actor" id)
+  (log "Starting actor" id)
   (go-loop [state state]
            (let [msg-in (<! inbox)]
              (binding [*logging* logging]
@@ -689,7 +689,7 @@
 (start! default-parameters)
 
 ;;
-;; Feautres
+;; Features
 ;; - basic SEO
 ;; - new game button
 ;; - controls info
@@ -702,6 +702,7 @@
 ;; - text, description
 ;; - more work on SEO
 ;; - more work on design
+;; - how to track visitors
 ;;
 ;; Bugs
 ;; - verify once more that lock js works properly
@@ -709,12 +710,12 @@
 ;; - arrowdown must be handled differently - smooth descend
 ;; - pause the game when the webpage is left
 ;; - game over must be declared earlier?
+;; - actors must return their inbox? => less code
 ;;
+;; Resources
 ;; https://domainlockjs.com
 ;;
-;; - actors must return their inbox? => less code
-;; - how to track visitors
-;;
+;; Copyright enforcement
 ;; - protect from copying
 ;;   - less direct: set var, not exception
 ;;   - call from several places
@@ -729,34 +730,28 @@
 ;;   - use https://utf-8.jp/public/jjencode.html
 ;;   - use sockets https://stackoverflow.com/questions/1660060/how-to-prevent-your-javascript-code-from-being-stolen-copied-and-viewed
 ;;   - !!! You can use an ajax script injection. This is deters theft because the same domain policy which prevents XSS will make the client side script difficult to run elsewhere.
-;;
 ;; - check https://www.goodoldtetris.com
 ;; - icons https://icones.js.org
 ;; - domain ref https://medium.com/@LovettLovett/github-pages-godaddy-f0318c2f25a
         ;; https://stackoverflow.com/questions/44672603/pointing-godaddy-dns-to-github-page-uses-http-over-https
 ;; - color schemes to choose
+;;;0. if check failed
+;;	- slow down the browser
+;;	- show the actual website and send the user there - use their website to your ad platform
+;;	- close the window if user disagrees
+;;
+;;1. addition obsfuscation methods
+;;	- compare to hash/hashes of the domain
+;;	- js references (window / location) - are they spilled?
+;;	- merge strings from bytes and send to js/eval to avoid detection in the output
+;;
+;;2. check the current location with JS
+;;	- different types of access checks in different places
+;;
+;;3. based on user's time
+;;	- same methods but " js works only until may 31 this year " - and somehow update on redeploy
+;;	- web pages auto reload themselves
+;;4. do request to backend on front (with website's url)
+;;	- backend checks from what site the query came, and gives bad uids
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
-;;
-;;
-;;
-;; -1. google for more methods
-;
-;0. if check failed
-;	- slow down the browser
-;	- show the actual website and send the user there - use their website to your ad platform
-;	- close the window if user disagrees
-;
-;1. addition obsfuscation methods
-;	- compare to hash/hashes of the domain
-;	- js references (window / location) - are they spilled?
-;	- merge strings from bytes and send to js/eval to avoid detection in the output
-;
-;2. check the current location with JS
-;	- different types of access checks in different places
-;
-;3. based on user's time
-;	- same methods but " js works only until may 31 this year " - and somehow update on redeploy
-;	- web pages auto reload themselves
-;4. do request to backend on front (with website's url)
-;	- backend checks from what site the query came, and gives bad uids
