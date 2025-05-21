@@ -688,25 +688,24 @@
 
 (start! default-parameters)
 
-
-;; - :complete button - move separately to the right column
-;; - buy domain name: retrogames.com
-;; - setup domain name on github pages
-;; - apply https://domainlockjs.com
+;; - rename fuckery.js to lock.js
+;; - deploy to respect lock.js
+;; - deploy to deploy lock.js
+;; - redeploy, make sure it all works properly
 ;; - basic SEO
 ;;
 ;; Feautres
-;; - controls info
-;; - new game button
-;; - design: web page buttons so you can play it on your phone
-;;   - hardware looking design? generic design?
-;; - description
-;; - sounds
-;; - visual effects
 ;; - calculating score
 ;; - switching levels?
+;; - new game button
+;; - controls info
+;; - visual effects
+;; - sounds
+;; - hardware looking design? generic design?
+;; - description
 ;;
 ;; Bugs
+;; - verify once more that lock js works properly
 ;; - check if in game over elements are overlapped in the very end?
 ;; - arrowdown must be handled differently - smooth descend
 ;; - pause the game when the webpage is left
@@ -716,7 +715,6 @@
 ;; - actors must return their inbox? => less code
 ;; - how to track visitors
 ;; - protect from copying
-;;   - https://domainlockjs.com
 ;;   - less direct: set var, not exception
 ;;   - call from several places
 ;;   - hide reading .location .host - get property via eval?
@@ -733,6 +731,8 @@
 ;;
 ;; - check https://www.goodoldtetris.com
 ;; - icons https://icones.js.org
+;; - domain ref https://medium.com/@LovettLovett/github-pages-godaddy-f0318c2f25a
+        ;; https://stackoverflow.com/questions/44672603/pointing-godaddy-dns-to-github-page-uses-http-over-https
 ;; - color schemes to choose
 ;;
 ;; stealing precaution: hostname and verify what is visible in the obfuscated code
