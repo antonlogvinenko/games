@@ -17,7 +17,7 @@ cp -r resources/public/index-prod.html $WWW/index.html
 
 mkdir -p $WWW/js
 cp target/public/cljs-out/dev-main.js $WWW/js/game.js
-cp -r resources/public/lock.js $WWW/js/
+cp -r resources/public/lib.js $WWW/js/
 
 git -C $WWW add --all
 git -C $WWW commit -m "Deploying a new version at: `date`"
