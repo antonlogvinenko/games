@@ -9,12 +9,14 @@ clj -M:fig:min
 
 WWW="$HOME/dev/antonlogvinenko.github.io/"
 git -C $WWW reset --hard HEAD
+
 cp -rf resources/public/css $WWW/
 cp -r resources/public/fonts $WWW/
-cp -r resources/public/index.html $WWW/
+
+cp -r resources/public/index-prod.html $WWW/index.html
 
 mkdir -p $WWW/js
-cp target/public/cljs-out/dev-main.js $WWW/js/
+cp target/public/cljs-out/dev-main.js $WWW/js/game.js
 cp -r resources/public/lock.js $WWW/js/
 
 git -C $WWW add --all

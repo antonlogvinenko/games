@@ -688,19 +688,20 @@
 
 (start! default-parameters)
 
-;; - deploy with copying lock.js
-;; - redeploy, make sure it all works properly
-;; - basic SEO
 ;;
 ;; Feautres
-;; - calculating score
-;; - switching levels?
+;; - basic SEO
 ;; - new game button
 ;; - controls info
+;; - pause when the tab is inactive?
+;; - displaying score, cleared lines
+
+;; - switching levels
 ;; - visual effects
-;; - sounds
-;; - hardware looking design? generic design?
-;; - description
+;; - sound effects
+;; - text, description
+;; - more work on SEO
+;; - more work on design
 ;;
 ;; Bugs
 ;; - verify once more that lock js works properly
@@ -713,6 +714,7 @@
 ;;
 ;; - actors must return their inbox? => less code
 ;; - how to track visitors
+;;
 ;; - protect from copying
 ;;   - less direct: set var, not exception
 ;;   - call from several places
