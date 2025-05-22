@@ -251,6 +251,16 @@
     [:td {:id "move-right-btn" :style (button-props {"font-size" "37px"})} "&rarr;"]]])
 
 
+(defn button [id text]
+  [:button {:id id :style (props {"background-color" "#e7e7e7"
+                                  "border" "none"
+                                  "color" "black"
+                                  "padding" "15px 16px"
+                                  "text-align" "center"
+                                  "text-decoration" "none"
+                                  "display" "inline-block"
+                                  "font-size" "14px"})} text])
+
 (defn render-right-column []
   [:div
    (render-table "next-elem" next-item-height next-item-width nil)
@@ -258,7 +268,7 @@
    [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;level
    [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;controls
    [:div {:style (props {"height" "80px" "text-align" "center" "vertical-align" "bottom"})}
-    [:button {:id "new-game-btn"} "New game"]]])
+    (button "new-game-btn" "New game")]])
 
 (defn render-game! [{height :height width :width}]
   (set-game-html!

@@ -1,6 +1,5 @@
 ### Features
 - High priority
-  - new game button
   - display the amount of cleared lines
   - display score
   - controls info
