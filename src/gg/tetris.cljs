@@ -192,10 +192,10 @@
         table-style (props (merge table-props {"height" (sizer height)
                                                "width"  (sizer width)
                                                ;"margin" "auto"
-                                               "border" "1px solid black"}))
+                                               "border" "0px solid black"}))
         ;"border-collapse" "collapse"})
         create-row (fn [row] (into [:tr]
-                                   (map (fn [col] [:td {:id (cell-id id-prefix row col) :style "border: 1px solid"} ""])
+                                   (map (fn [col] [:td {:id (cell-id id-prefix row col) :style "border: 1px solid grey"} ""])
                                         (range width))))]
     [:div (into [:table {:style table-style}]
                 (map create-row (reverse (range height))))]))
@@ -252,14 +252,15 @@
 
 
 (defn button [id text]
-  [:button {:id id :style (props {"background-color" "#e7e7e7"
-                                  "border" "none"
-                                  "color" "black"
-                                  "padding" "15px 16px"
-                                  "text-align" "center"
-                                  "text-decoration" "none"
-                                  "display" "inline-block"
-                                  "font-size" "14px"})} text])
+  [:button {:id id :style (props {"border-radius"    "4px;"
+                                  "background-color" "#e7e7e7"
+                                  "border"           "none"
+                                  "color"            "black"
+                                  "padding"          "15px 16px"
+                                  "text-align"       "center"
+                                  "text-decoration"  "none"
+                                  "display"          "inline-block"
+                                  "font-size"        "14px"})} text])
 
 (defn render-right-column []
   [:div
