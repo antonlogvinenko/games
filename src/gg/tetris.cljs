@@ -257,7 +257,8 @@
    [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;score
    [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;level
    [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;controls
-   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""]]) ;;new game
+   [:div {:style (props {"height" "80px" "text-align" "center" "vertical-align" "bottom"})}
+    [:button {:id "new-game-btn"} "New game"]]])
 
 (defn render-game! [{height :height width :width}]
   (set-game-html!
@@ -582,13 +583,14 @@
            (do (log "Setting color" x y color)
                (set-color! target x y color)))))
 
-(defn create-button-listener [action-ch]
+(defn create-button-listeners [action-ch restart-game]
   (doseq [[name event] {"move-left-btn"    ::move-left
                         "move-right-btn"   ::move-right
                         "rotate-left-btn"  ::rotate-left
                         "rotate-right-btn" ::rotate-right
                         "complete-btn"     ::complete}]
-    (gevents/listen (gdom/getElement name) "click" #(put! action-ch event))))
+    (gevents/listen (gdom/getElement name) "click" #(put! action-ch event)))
+  (gevents/listen (gdom/getElement "new-game-btn") "click" restart-game))
 
 
 (defn start! [parameters]
@@ -612,7 +614,7 @@
                                          renderer-calculator-ch renderer-ch]
                                         (map (fn [ch] (put! ch :quit)))
                                         dorun)))]
-    (create-button-listener action-ch)
+    (create-button-listeners action-ch #(do (:stop state) (start! default-parameters)))
     (game-started-message!)
 
     (verification)
