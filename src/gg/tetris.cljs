@@ -243,7 +243,7 @@
 (def default-parameters (create-parameters 20 10 2000))
 
 (defn render-control-buttons []
-  [:table {:width "280px" :style "margin: auto"}
+  [:table {:width "270px" :style "margin: auto"}
    [:tr
     [:td {:id "move-left-btn" :style (button-props {"font-size" "37px"})} "&larr;"]
     [:td {:id "rotate-left-btn" :style (button-props {"font-size" "45px"})} "&#10226;"]
@@ -280,7 +280,7 @@
           [:div {:id "game-message"}]]
          [:td]]
         [:tr
-         [:td {:style (props {"vertical-align" "top"})} (render-table "field" height width {"margin" "auto"})]
+         [:td {:style (props {"vertical-align" "top"})} (render-table "field" height width {"margin" "auto" "margin-right" "0px"})]
          [:td {:style (props {"vertical-align" "top"})} (render-right-column)]]
         [:tr
          [:td (render-control-buttons)]
