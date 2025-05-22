@@ -241,6 +241,24 @@
             "user-select"         "none"})))
 
 (def default-parameters (create-parameters 20 10 2000))
+
+(defn render-control-buttons []
+  [:table {:width "280px" :style "margin: auto"}
+   [:tr
+    [:td {:id "move-left-btn" :style (button-props {"font-size" "37px"})} "&larr;"]
+    [:td {:id "rotate-left-btn" :style (button-props {"font-size" "45px"})} "&#10226;"]
+    [:td {:id "rotate-right-btn" :style (button-props {"font-size" "45px"})} "&#10227;"]
+    [:td {:id "move-right-btn" :style (button-props {"font-size" "37px"})} "&rarr;"]]])
+
+
+(defn render-right-column []
+  [:div
+   (render-table "next-elem" next-item-height next-item-width nil)
+   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;score
+   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;level
+   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;controls
+   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""]]) ;;new game
+
 (defn render-game! [{height :height width :width}]
   (set-game-html!
     (hiccups/html
@@ -251,16 +269,10 @@
           [:div {:id "game-message"}]]
          [:td]]
         [:tr
-         [:td (render-table "field" height width {"margin" "auto"})]
-         [:td {:style (props {"vertical-align" "top"})}
-          (render-table "next-elem" next-item-height next-item-width nil)]]
+         [:td {:style (props {"vertical-align" "top"})} (render-table "field" height width {"margin" "auto"})]
+         [:td {:style (props {"vertical-align" "top"})} (render-right-column)]]
         [:tr
-         [:td [:table {:width "280px" :style "margin: auto"}
-               [:tr
-                [:td {:id "move-left-btn" :style (button-props {"font-size" "37px"})} "&larr;"]
-                [:td {:id "rotate-left-btn" :style (button-props {"font-size" "45px"})} "&#10226;"]
-                [:td {:id "rotate-right-btn" :style (button-props {"font-size" "45px"})} "&#10227;"]
-                [:td {:id "move-right-btn" :style (button-props {"font-size" "37px"})} "&rarr;"]]]]
+         [:td (render-control-buttons)]
          [:td {:id "complete-btn" :style (button-props {"font-size" "30px" "font-weight" "normal"})} "&darr;"]]]]))
   [(get-rendered-references! "field" height width)
    (get-rendered-references! "next-elem" next-item-height next-item-width)])
@@ -690,13 +702,14 @@
 
 ;;
 ;; Features
-;; - basic SEO
+;; - tetris in different languages тетрис chinese spanishin SEO
 ;; - new game button
+;; - display amount of cleared lines
+;; - display score
 ;; - controls info
 ;; - pause when the tab is inactive?
-;; - displaying score, cleared lines
-
 ;; - switching levels
+;;
 ;; - visual effects
 ;; - sound effects
 ;; - text, description
@@ -733,7 +746,7 @@
 ;; - check https://www.goodoldtetris.com
 ;; - icons https://icones.js.org
 ;; - domain ref https://medium.com/@LovettLovett/github-pages-godaddy-f0318c2f25a
-        ;; https://stackoverflow.com/questions/44672603/pointing-godaddy-dns-to-github-page-uses-http-over-https
+;; https://stackoverflow.com/questions/44672603/pointing-godaddy-dns-to-github-page-uses-http-over-https
 ;; - color schemes to choose
 ;;;0. if check failed
 ;;	- slow down the browser
