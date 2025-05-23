@@ -174,6 +174,7 @@
      :game-over false
      :ticking   ticking
      :cleared   0
+     :score     0
      :field     (create-empty-matrix height width)}))
 
 
@@ -265,13 +266,14 @@
                                   "font-size"        "14px"})} text])
 
 (defn render-right-column []
-  [:div
+  [:div {:style (props {})}
    (render-table "next-elem" next-item-height next-item-width nil)
-   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;score
-   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;level
-   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} ""] ;;controls
-   [:div {:style (props {"height" "80px" "vertical-align" "bottom"})} (button "cleared-lines-field" "Cleans: 0")]
-   [:div {:style (props {"height" "80px" "text-align" "center" "vertical-align" "bottom"})}
+   [:div {:style (props {"height" "110px"})}]
+   [:div {:style (props {"height" "80px"})} (button "score-field" "Score: 0")]
+   ;[:div {:style (props {"height" "80px" })} (button "level-field" "Level")]
+   ;[:div {:style (props {"height" "80px" })} (button "controls-field" "Controls")]
+   [:div {:style (props {"height" "80px" })} (button "cleared-lines-field" "Cleans: 0")]
+   [:div {:style (props {"height" "80px" "text-align" "center"})}
     (button "new-game-btn" "New game")]])
 
 (defn render-game! [{height :height width :width}]
@@ -368,16 +370,23 @@
        seq
        (#(when % ((juxt first last) %)))))
 
+(defn calculate-score [score cleared]
+  (println (+ score (* 10 cleared)))
+  (+ score (* 10 cleared)))
+
 (defn do-clear-candidates [{height  :height
                             width   :width
                             field   :field
                             cleared :cleared
+                            score   :score
                             :as     state}]
   (if-let [[low-y high-y] (get-clear-candidates state)]
     (let [new-cleared (inc (- high-y low-y))]
       (assoc state
         :cleared
         (+ cleared new-cleared)
+        :score
+        (calculate-score score new-cleared)
         :field
         (vec (concat
                (when (pos? low-y) (subvec field 0 low-y))
@@ -574,8 +583,9 @@
       (for [x (range xl (max (inc xr) (+ next-item-width xl)))]
         (at-tt elem x y)))))
 
-(defn generate-scene [{tt-gen :tt-gen tsys :tsys cleared :cleared :as state}]
+(defn generate-scene [{tt-gen :tt-gen tsys :tsys cleared :cleared score :score :as state}]
   {:cleared   cleared
+   :score     score
    :field     (add-element-to-field state)
    :next-elem (add-element-to-next (first (get-tt tsys (first-gen tt-gen) 0)))})
 
@@ -599,6 +609,9 @@
 
 (defn update-cleared [cleared]
   (set-value! "cleared-lines-field" (str "Cleans: " cleared)))
+
+(defn update-score [score]
+  (set-value! "score-field" (str "Score: " score)))
 
 (defn update-colors [target diff]
   (dorun (for [{x :x y :y color :color} diff]
@@ -648,7 +661,9 @@
            {}
            (fn [{{field-diff     :field
                   next-elem-diff :next-elem
-                  cleared        :cleared} :msg}]
+                  cleared        :cleared
+                  score          :score} :msg}]
+             (update-score score)
              (update-cleared cleared)
              (update-colors field field-diff)
              (update-colors next-elem next-elem-diff)))
@@ -659,9 +674,10 @@
            renderer-ch
            {:field     (:field state)
             :next-elem next-element-empty-space}
-           (fn [{{field-1 :field next-elem-1 :next-elem}                              :state
-                 {field-2 :field next-elem-2 :next-elem cleared :cleared :as state-2} :msg}]
+           (fn [{{field-1 :field next-elem-1 :next-elem}                                           :state
+                 {field-2 :field next-elem-2 :next-elem cleared :cleared score :score :as state-2} :msg}]
              {:msg   {:cleared   cleared
+                      :score     score
                       :field     (field-diff field-1 field-2)
                       :next-elem (field-diff next-elem-1 next-elem-2)}
               :state state-2}))

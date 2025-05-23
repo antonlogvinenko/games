@@ -1,9 +1,11 @@
 ### Features
 - High priority
-  - display score
+  - implement levels
+    - auto switching levels
+  - better scoring algorithm - after implementing levels
   - controls info
   - pause when the tab is inactive?
-  - auto switching levels
+  - work on design of right column
 - Lower priority
   - visual effects
   - sound effects
