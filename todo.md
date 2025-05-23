@@ -1,10 +1,9 @@
 ### Features
 - High priority
-  - display the amount of cleared lines
   - display score
   - controls info
   - pause when the tab is inactive?
-  - switching levels
+  - auto switching levels
 - Lower priority
   - visual effects
   - sound effects
