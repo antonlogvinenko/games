@@ -371,7 +371,6 @@
        (#(when % ((juxt first last) %)))))
 
 (defn calculate-score [score cleared]
-  (println (+ score (* 10 cleared)))
   (+ score (* 10 cleared)))
 
 (defn do-clear-candidates [{height  :height

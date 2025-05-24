@@ -7,17 +7,17 @@
   - pause when the tab is inactive?
   - work on design of right column
 - Lower priority
+  - adapt screen size to device
+  - arrowdown must be handled differently - smooth descend
   - visual effects
   - sound effects
   - text, description
   - more work on SEO
   - more work on design
-  - how to track visitors
-
+  - 
 ### Bugs
 - verify once more that lock js works properly
 - check if in game over elements are overlapped in the very end?
-- arrowdown must be handled differently - smooth descend
 - pause the game when the webpage is left
 - game over must be declared earlier?
 - actors must return their inbox? => less code
