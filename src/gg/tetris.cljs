@@ -173,6 +173,7 @@
      :tsys      ::super
      :game-over false
      :ticking   ticking
+     :level     0
      :cleared   0
      :score     0
      :field     (create-empty-matrix height width)}))
@@ -270,9 +271,9 @@
    (render-table "next-elem" next-item-height next-item-width nil)
    [:div {:style (props {"height" "110px"})}]
    [:div {:style (props {"height" "80px"})} (button "score-field" "Score: 0")]
-   ;[:div {:style (props {"height" "80px" })} (button "level-field" "Level")]
+   [:div {:style (props {"height" "80px"})} (button "level-field" "Level: 0")]
    ;[:div {:style (props {"height" "80px" })} (button "controls-field" "Controls")]
-   [:div {:style (props {"height" "80px" })} (button "cleared-lines-field" "Cleans: 0")]
+   [:div {:style (props {"height" "80px"})} (button "cleared-lines-field" "Cleans: 0")]
    [:div {:style (props {"height" "80px" "text-align" "center"})}
     (button "new-game-btn" "New game")]])
 
@@ -370,9 +371,19 @@
        seq
        (#(when % ((juxt first last) %)))))
 
+
+
+(defn calculate-level [cleared]
+  (quot cleared 10))
+
 (defn calculate-score [score cleared]
   (+ score (* 10 cleared)))
 
+; score <- cleared -> level -> speed
+; https://tetris.wiki/Tetris_(NES)
+; more advanced details:
+; cleared + started at level -> level
+; cleared + how much at once -> score
 (defn do-clear-candidates [{height  :height
                             width   :width
                             field   :field
@@ -380,17 +391,18 @@
                             score   :score
                             :as     state}]
   (if-let [[low-y high-y] (get-clear-candidates state)]
-    (let [new-cleared (inc (- high-y low-y))]
+    (let [new-cleared (inc (- high-y low-y))
+          overall-cleared (+ cleared new-cleared)
+          new-level (calculate-level overall-cleared)
+          new-score (calculate-score score new-cleared)]
       (assoc state
-        :cleared
-        (+ cleared new-cleared)
-        :score
-        (calculate-score score new-cleared)
-        :field
-        (vec (concat
-               (when (pos? low-y) (subvec field 0 low-y))
-               (when (< high-y height) (subvec field (inc high-y) height))
-               (create-empty-matrix new-cleared width)))))
+        :level new-level
+        :cleared overall-cleared
+        :score new-score
+        :field (vec (concat
+                      (when (pos? low-y) (subvec field 0 low-y))
+                      (when (< high-y height) (subvec field (inc high-y) height))
+                      (create-empty-matrix new-cleared width)))))
     state))
 
 
@@ -582,8 +594,9 @@
       (for [x (range xl (max (inc xr) (+ next-item-width xl)))]
         (at-tt elem x y)))))
 
-(defn generate-scene [{tt-gen :tt-gen tsys :tsys cleared :cleared score :score :as state}]
+(defn generate-scene [{tt-gen :tt-gen tsys :tsys cleared :cleared score :score level :level :as state}]
   {:cleared   cleared
+   :level     level
    :score     score
    :field     (add-element-to-field state)
    :next-elem (add-element-to-next (first (get-tt tsys (first-gen tt-gen) 0)))})
@@ -611,6 +624,9 @@
 
 (defn update-score [score]
   (set-value! "score-field" (str "Score: " score)))
+
+(defn update-level [level]
+  (set-value! "level-field" (str "Level: " level)))
 
 (defn update-colors [target diff]
   (dorun (for [{x :x y :y color :color} diff]
@@ -661,7 +677,9 @@
            (fn [{{field-diff     :field
                   next-elem-diff :next-elem
                   cleared        :cleared
+                  level          :level
                   score          :score} :msg}]
+             (update-level level)
              (update-score score)
              (update-cleared cleared)
              (update-colors field field-diff)
@@ -673,9 +691,13 @@
            renderer-ch
            {:field     (:field state)
             :next-elem next-element-empty-space}
-           (fn [{{field-1 :field next-elem-1 :next-elem}                                           :state
-                 {field-2 :field next-elem-2 :next-elem cleared :cleared score :score :as state-2} :msg}]
+           (fn [{{field-1 :field next-elem-1 :next-elem} :state
+                 {field-2 :field next-elem-2 :next-elem
+                  cleared :cleared
+                  level   :level
+                  score   :score :as state-2}            :msg}]
              {:msg   {:cleared   cleared
+                      :level     level
                       :score     score
                       :field     (field-diff field-1 field-2)
                       :next-elem (field-diff next-elem-1 next-elem-2)}

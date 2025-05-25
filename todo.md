@@ -1,26 +1,25 @@
 ### Features
 - High priority
-  - implement levels
-    - auto switching levels
-  - better scoring algorithm - after implementing levels
+  - implement changing speed
   - controls info
   - pause when the tab is inactive?
-  - work on design of right column
-- Lower priority
-  - adapt screen size to device
+  - work on layout of the right column
   - arrowdown must be handled differently - smooth descend
+- Lower priority
+  - adapt screen size for device
   - visual effects
   - sound effects
   - text, description
   - more work on SEO
   - more work on design
-  - 
+
 ### Bugs
 - verify once more that lock js works properly
 - check if in game over elements are overlapped in the very end?
 - pause the game when the webpage is left
 - game over must be declared earlier?
 - actors must return their inbox? => less code
+- implement level with non zero "started at level"
 
  ### Resources
 - https://domainlockjs.com

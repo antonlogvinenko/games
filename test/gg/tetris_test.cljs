@@ -7,26 +7,36 @@
 ;https://cljs.github.io/api/cljs.test/
 ;https://figwheel.org/config-options
 
+(ns gg.tetris-test
+  (:require [cljs.test :refer [deftest testing is]]
+            [gg.tetris :as t :refer [calculate-x-start]]))
+
+(ns gg.tetris-test
+  (:require [cljs.test :refer [deftest testing is]]
+            [gg.tetris :as t :refer [descend]]))
+
+
+
+
 
 (deftest next-or-game-over!-test
-  (let [elem-generator (fn [] [::t/L ::t/J])]
-    (is (== (t/next-or-game-over! {:height 4
-                                   :width  4
-                                   :tsys   ::t/super
-                                   :field  [[1 1 1 1] [1 1 1 1] [1 1 1 1] [1 1 1 1]]
-                                   :tt-gen (fn [] [::t/L ::t/O])
-                                   :stop   (fn [] (fn [] nil))})
-            nil)
-        "game over")
-    (is (== (select-keys (t/next-or-game-over! {:height 4
-                                                :width  4
-                                                :tsys   ::t/super
-                                                :field  [[1 1 1 1] [1 1 1 1] [1 1 1 1] [0 0 0 0]]
-                                                :tt-gen (fn [] [::t/L ::t/O])
-                                                :stop   (fn [] (fn [] nil))})
-                         [:x :y :tid])
-            {:x 1 :y 2 :tid ::t/L})
-        "game continued")))
+  (is (== (t/next-or-game-over! {:height 4
+                                 :width  4
+                                 :tsys   ::t/super
+                                 :field  [[1 1 1 1] [1 1 1 1] [1 1 1 1] [1 1 1 1]]
+                                 :tt-gen (fn [] [::t/L ::t/O])
+                                 :stop   (fn [] (fn [] nil))})
+          nil)
+      "game over")
+  (is (== (select-keys (t/next-or-game-over! {:height 4
+                                              :width  4
+                                              :tsys   ::t/super
+                                              :field  [[1 1 1 1] [1 1 1 1] [1 1 1 1] [0 0 0 0]]
+                                              :tt-gen (fn [] [::t/L ::t/O])
+                                              :stop   (fn [] (fn [] nil))})
+                       [:x :y :tid])
+          {:x 1 :y 2 :tid ::t/L})
+      "game continued"))
 
 (deftest calculate-x-start-test
   (is (== 4 (t/calculate-x-start 10 ::t/super ::t/L)))
