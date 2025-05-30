@@ -22,7 +22,7 @@
   (* 1000 (/ (levels level) fps)))
 
 ;; -- Game state
-(def game-state (atom {:timeout-ms 1000}))
+(def game-state (atom {:timeout-ms (sleep-ms-at-level 0)}))
 
 (defrecord FieldDiff [x y color])
 (defn at-tt [table x y]

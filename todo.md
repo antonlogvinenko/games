@@ -1,13 +1,13 @@
 ### Features
 - High priority
-  - implement changing speed
   - controls info
+  - do something to remove lags? continuous performance profile or rework actor model
+  - hunt down the bug with stuck item at the top
+- Lower priority
   - pause when the tab is inactive?
   - work on layout of the right column
   - arrowdown must be handled differently - smooth descend
-- Lower priority
   - adapt screen size for device
-  - do something to remove lags? continuous performance profile or rework actor model
   - text, description
   - visual effects?
   - sound effects?
