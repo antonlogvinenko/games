@@ -7,16 +7,6 @@
 ;https://cljs.github.io/api/cljs.test/
 ;https://figwheel.org/config-options
 
-(ns gg.tetris-test
-  (:require [cljs.test :refer [deftest testing is]]
-            [gg.tetris :as t :refer [calculate-x-start]]))
-
-(ns gg.tetris-test
-  (:require [cljs.test :refer [deftest testing is]]
-            [gg.tetris :as t :refer [descend]]))
-
-
-
 
 
 (deftest next-or-game-over!-test

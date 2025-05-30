@@ -7,9 +7,10 @@
   - arrowdown must be handled differently - smooth descend
 - Lower priority
   - adapt screen size for device
-  - visual effects
-  - sound effects
+  - do something to remove lags? continuous performance profile or rework actor model
   - text, description
+  - visual effects?
+  - sound effects?
   - more work on SEO
   - more work on design
 
