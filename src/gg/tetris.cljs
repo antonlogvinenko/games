@@ -21,8 +21,9 @@
 (defn sleep-ms-at-level [level]
   (* 1000 (/ (levels level) fps)))
 
-
 ;; -- Game state
+(def game-state (atom {:timeout-ms 1000}))
+
 (defrecord FieldDiff [x y color])
 (defn at-tt [table x y]
   (-> table (nth y []) (nth x 0)))
@@ -634,6 +635,9 @@
 (defn update-level [level]
   (set-value! "level-field" (str "Level: " level)))
 
+(defn update-speed [level]
+  (swap! game-state update-in [:timeout-ms] (fn [x] (sleep-ms-at-level level))))
+
 (defn update-colors [target diff]
   (dorun (for [{x :x y :y color :color} diff]
            (do (log "Setting color" x y color)
@@ -651,8 +655,8 @@
 
 (defn start! [parameters]
   (stop!)
-  (let [timed-ch-ctrl (default-ch)
-        timed-ch (create-timed-ch timed-ch-ctrl 1000)
+  (let [
+        timed-ch (default-ch)
         kbd-ch (create-kbd-ch)
         null-inbox (default-ch)
 
@@ -666,7 +670,7 @@
 
         state (init-state parameters field next-elem)
         state (assoc state :stop (fn []
-                                   (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch scene-ch
+                                   (->> [timed-ch kbd-ch chord-ch action-ch scene-ch
                                          renderer-calculator-ch renderer-ch]
                                         (map (fn [ch] (put! ch :quit)))
                                         dorun)))]
@@ -685,6 +689,7 @@
                   cleared        :cleared
                   level          :level
                   score          :score} :msg}]
+             (update-speed level)
              (update-level level)
              (update-score score)
              (update-cleared cleared)
@@ -729,15 +734,12 @@
 
     (let [id "ticker"]
       (log "Starting actor" id)
-      (go-loop [interval-ms 1000]
-               (let [_ (<! (timeout interval-ms))]
-                 (>! action-ch :game-tick)
-                 (let [msg-in (<! timed-ch)]
-                   (binding [*logging* false]
-                     (log "[" id "]" "received a message" (subs (str msg-in) 0 100))
-                     (if (= msg-in :quit)
-                       (log "Quitting" id)
-                       (recur msg-in)))))))
+      (go-loop []
+               (let [[v _] (alts! [timed-ch (timeout (:timeout-ms @game-state))])]
+                 (if (= v :quit)
+                   (log "Quitting" id)
+                   (do (>! action-ch :game-tick)
+                       (recur))))))
 
     (actor "kbd interpreter"
            false
@@ -766,7 +768,7 @@
                    {:msg nil :state modifiers})))))
 
     (reset! game (assoc state :stop (fn []
-                                      (->> [timed-ch-ctrl timed-ch kbd-ch chord-ch action-ch scene-ch
+                                      (->> [timed-ch kbd-ch chord-ch action-ch scene-ch
                                             renderer-calculator-ch renderer-ch]
                                            (map (fn [ch] (put! ch :quit)))
                                            dorun))))
