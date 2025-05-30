@@ -3,7 +3,7 @@ set -ex
 echo "Deploying..."
 date
 
-git stash
+# git stash
 
 clj -M:fig:min
 
@@ -23,4 +23,4 @@ git -C $WWW add --all
 git -C $WWW commit -m "Deploying a new version at: `date`"
 git -C $WWW push origin main
 
-git stash pop
+# git stash pop
