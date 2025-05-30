@@ -727,12 +727,17 @@
              (let [new-game-state (action-handler state msg)]
                {:msg new-game-state :state new-game-state})))
 
-    (actor "ticker"
-           false
-           timed-ch
-           action-ch
-           {}
-           (fn [_] {:msg :game-tick}))
+    (let [id "ticker"]
+      (log "Starting actor" id)
+      (go-loop [state {}]
+               (let [msg-in (<! timed-ch)]
+                 (binding [*logging* false]
+                   (log "[" id "]" "received a message" (subs (str msg-in) 0 100))
+                   (if (= msg-in :quit)
+                     (log "Quitting" id)
+                     (let [{msg-out :msg new-state :state} {:msg :game-tick}]
+                       (when msg-out (>! action-ch msg-out))
+                       (recur new-state)))))))
 
     (actor "kbd interpreter"
            false
