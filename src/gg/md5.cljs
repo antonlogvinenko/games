@@ -7,7 +7,6 @@
 
 
 (defn md5 [value]
-  (println value)
   (crypt/byteArrayToHex
     (let [md5 (goog.crypt.Md5.)]
       (.update md5 (crypt/stringToUtf8ByteArray
