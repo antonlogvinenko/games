@@ -207,7 +207,7 @@
         create-row (fn [row] (into [:tr]
                                    (map (fn [col] [:td {:id (cell-id id-prefix row col) :style "border: 1px solid grey"} ""])
                                         (range width))))]
-    [:div (into [:table {:style table-style}]
+    [:div (into [:table {:width "300px" :style table-style}]
                 (map create-row (reverse (range height))))]))
 
 
@@ -284,21 +284,29 @@
    [:div {:style (props {"height" "80px" "text-align" "center"})}
     (button "new-game-btn" "New game")]])
 
+(def description "Tetris is a puzzle video game with a consistent general design across its numerous versions. Gameplay consists of a rectangular field in which tetromino pieces, geometric shapes consisting of four connected squares, descend from the top-center. During the descent, the player can move the piece horizontally and rotate them until they touch the bottom of the field or another piece. The player's goal is to stack the pieces in the field to create horizontal lines of blocks. When a line is completed, it disappears, and the blocks placed above fall one row. As lines are cleared, the speed of the descending pieces increase. The game ends if the accumulated pieces in the field block other pieces from entering the field, a process known as \"topping out\". Common mechanics among Tetris variants include soft drop (the ability to increase the descent of the piece), hard drop (instantly placing the piece as far down as it can go), and holding (reserving a piece for later use).")
+(def description2 "The objective of Tetris is to collect as many points as possible during a gameplay session by clearing lines. Tetris's scoring system has remained mostly consistent since Tetris DS (2006) with some exceptions. Points gained during gameplay increase with the descent speed. The more lines cleared at once, the higher the score for a line clear; clearing four lines at once using an I-piece is referred to as a \"Tetris\". The player can also gain points by using hard drops or soft drops. There are advanced techniques that can gain more points than a Tetris, including T-spins (spinning a T-piece into a blocked gap), perfect clears (emptying the field following a line clear), and combos (clearing lines with multiple pieces in a row).")
+
 (defn render-game! [{height :height width :width}]
   (set-game-html!
     (hiccups/html
       [:div
-       [:table {:width "300px" :style "margin: auto"}
+       [:table {:width "1000px" :style "margin: auto; margin-left: 50px"}
+        ;[:tr
+        ; [:td {:style (props {"text-align" "center"})}
+        ;  [:div {:id "game-message"}]]
+        ; [:td]]
         [:tr
-         [:td {:style (props {"text-align" "center"})}
-          [:div {:id "game-message"}]]
-         [:td]]
-        [:tr
+         [:td {:style (props {"vertical-align" "top" "width" "500px"})}
+          [:p description] [:p description2]]
+         [:td {:style (props {"width" "100px"})}]
          [:td {:style (props {"vertical-align" "top"})}
           (render-table "field" height width {"margin" "auto" "margin-right" "0px"})]
          [:td {:style (props {"vertical-align" "top"})}
           (render-right-column)]]
         [:tr
+         [:td {:style "width: 500px"} ""]
+         [:td {:style (props {"width" "100px"})}]
          [:td (render-control-buttons)]
          [:td {:id "complete-btn" :style (button-props {"font-size" "30px" "font-weight" "normal"})} "&darr;"]]]]))
   [(get-rendered-references! "field" height width)
@@ -364,7 +372,7 @@
 
 (defn game-over! [{stop :stop :as state}]
   (stop)
-  (game-over-message!)
+  ;(game-over-message!)
   state)
 
 (defn descend [distance state]
@@ -675,7 +683,7 @@
                                         (map (fn [ch] (put! ch :quit)))
                                         dorun)))]
     (create-button-listeners action-ch #(do (:stop state) (start! default-parameters)))
-    (game-started-message!)
+    ;(game-started-message!)
 
     (verification)
 

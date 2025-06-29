@@ -1,8 +1,9 @@
 ### Features
 - High priority
-  - controls info: wasd, arrows, enter, space, shift
   - hunt down the bug with stuck item at the top
   - do something to remove lags, continuous performance profile or rework actor model
+  - 
+  - controls info: wasd, arrows, enter, space, shift
   - adapt screen size for device
 - Middle priority
   - sound effects
